@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>청소 당번 뽑기</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<style>
+:root {
+  --bg:#FAF8F5; --surface:#FFFFFF; --surface2:#F5F2FC;
+  --accent:#8573F5; --accent2:#E8795A; --accent3:#3FAE7F;
+  --text:#2D2D3A; --text-muted:#7A7685; --text-dim:#ADA9B8;
+  --border:rgba(45,45,58,0.08); --border2:rgba(45,45,58,0.14);
+  --cd-accent:#C4B5FD;
+  --radius:18px; --radius-sm:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Pretendard','Apple SD Gothic Neo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;top:-30vh;left:50%;transform:translateX(-50%);width:80vw;height:60vh;background:radial-gradient(ellipse,rgba(133,115,245,0.05) 0%,transparent 70%);pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:0 18px 80px}
+
+/* 헤더 */
+header{text-align:center;padding:44px 0 32px}
+.header-badge{display:inline-block;font-size:11px;letter-spacing:3px;color:var(--accent);border:1px solid rgba(133,115,245,0.3);border-radius:999px;padding:4px 14px;margin-bottom:14px}
+h1{font-family:'Pretendard',sans-serif;font-size:clamp(1.9rem,5vw,3rem);font-weight:800;letter-spacing:-1px;line-height:1.1}
+h1 em{color:var(--accent);font-style:normal}
+.header-sub{font-size:14px;color:var(--text-muted);margin-top:8px}
+
+/* 탭 */
+.tabs{display:flex;gap:6px;background:var(--surface);border-radius:var(--radius);padding:7px;margin-bottom:24px;border:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;min-width:72px;padding:10px 6px;border-radius:10px;border:none;background:transparent;color:var(--text-muted);font-family:'Pretendard',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:3px;line-height:1.3;touch-action:manipulation}
+.tab .ti{font-size:18px}
+.tab:hover{color:var(--text);background:var(--surface2)}
+.tab.active{background:var(--accent);color:#FFFFFF;font-weight:700}
+
+/* 패널 */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:14px}
+.panel-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* 학생 그리드 */
+.name-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:7px}
+.name-btn{font-family:'Pretendard',sans-serif;font-size:13px;padding:10px 4px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface2);color:var(--text);cursor:pointer;text-align:center;transition:all 0.15s;touch-action:manipulation}
+.name-btn:hover{border-color:var(--accent);color:var(--accent)}
+.name-btn:active{transform:scale(0.95)}
+.name-btn.excluded{background:transparent;color:var(--text-dim);text-decoration:line-through;border-style:dashed;border-color:var(--text-dim)}
+.name-btn.highlighted{background:rgba(133,115,245,0.15);border-color:var(--accent);color:var(--accent);font-weight:700;animation:glow 0.5s ease}
+@keyframes glow{0%{transform:scale(1);box-shadow:none}50%{transform:scale(1.08);box-shadow:0 0 18px rgba(133,115,245,0.4)}100%{transform:scale(1)}}
+.hint{font-size:12px;color:var(--text-dim);margin-top:8px}
+
+/* 버튼들 */
+.btn-main{width:100%;padding:17px;font-family:'Pretendard',sans-serif;font-size:16px;font-weight:700;letter-spacing:0.5px;background:var(--accent);color:#FFFFFF;border:none;border-radius:var(--radius);cursor:pointer;transition:all 0.18s;touch-action:manipulation;margin-top:4px}
+.btn-main:hover{opacity:0.9;transform:translateY(-1px)}
+.btn-main:active{transform:scale(0.99)}
+.btn-main:disabled{background:var(--surface2);color:var(--text-dim);cursor:not-allowed;transform:none}
+.btn-ghost{font-family:'Pretendard',sans-serif;font-size:13px;color:var(--text-muted);background:none;border:1px dashed var(--border2);border-radius:var(--radius-sm);padding:8px 14px;cursor:pointer;transition:all 0.15s;touch-action:manipulation}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+/* 컨트롤 행 */
+.ctrl-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.ctrl-group{display:flex;align-items:center;gap:7px}
+.ctrl-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.12s;touch-action:manipulation;font-family:'Pretendard',sans-serif}
+.ctrl-btn:hover{border-color:var(--accent);color:var(--accent)}
+.ctrl-lbl{font-size:14px;color:var(--text-muted)}
+.ctrl-val{font-family:'Pretendard',sans-serif;font-size:26px;font-weight:800;color:var(--accent);min-width:44px;text-align:center}
+select.ctrl-sel{font-family:'Pretendard',sans-serif;font-size:14px;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);cursor:pointer}
+
+/* 결과 */
+.result-box{border:1px solid var(--accent);border-radius:var(--radius);padding:26px 22px;margin-top:14px;background:rgba(133,115,245,0.04);display:none;animation:fadeUp 0.4s ease}
+.result-box.show{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.result-label{font-size:11px;letter-spacing:2px;color:var(--accent);margin-bottom:12px}
+.chips{display:flex;flex-wrap:wrap;gap:9px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:10px 17px;border-radius:999px;font-size:15px;font-weight:600;animation:popIn 0.3s ease both}
+.chip-gold{background:rgba(133,115,245,0.18);border:1px solid var(--accent);color:var(--accent)}
+.chip-red{background:rgba(232,121,90,0.18);border:1px solid var(--accent2);color:var(--accent2)}
+.chip-teal{background:rgba(63,174,127,0.18);border:1px solid var(--accent3);color:var(--accent3)}
+@keyframes popIn{from{opacity:0;transform:scale(0.7)}to{opacity:1;transform:scale(1)}}
+
+/* 게임 화면 */
+.game-screen{display:none}
+.game-screen.active{display:block}
+
+/* 테이블 */
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{text-align:left;color:var(--text-dim);font-weight:500;font-size:11px;padding:6px 10px;border-bottom:1px solid var(--border);letter-spacing:1px}
+.data-table td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr.hl td{color:var(--accent);font-weight:700;background:rgba(133,115,245,0.06)}
+.data-table tr.hl2 td{color:var(--accent2);font-weight:700;background:rgba(232,121,90,0.06)}
+.num-right{text-align:right;font-size:16px;font-weight:700}
+
+/* 손가락 게임 */
+.finger-hero{text-align:center;padding:28px;background:var(--surface2);border-radius:var(--radius);margin-bottom:14px}
+.finger-big{font-family:'Pretendard',sans-serif;font-size:clamp(4rem,12vw,7rem);font-weight:800;color:var(--accent);line-height:1;text-shadow:0 0 50px rgba(133,115,245,0.25)}
+.finger-range{font-size:13px;color:var(--text-muted);margin-top:8px}
+.op-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.op-tab{flex:1;min-width:80px;padding:11px 8px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text-muted);font-size:14px;font-weight:600;cursor:pointer;text-align:center;transition:all 0.15s;touch-action:manipulation;font-family:'Pretendard',sans-serif}
+.op-tab.active{border-color:var(--accent);background:rgba(133,115,245,0.12);color:var(--accent)}
+.formula-display{background:var(--bg);border:1px solid var(--border2);border-radius:12px;padding:14px 18px;margin-bottom:14px;font-size:15px;color:var(--text-muted);line-height:1.7}
+.formula-display strong{color:var(--text);font-size:18px}
+
+/* 신체행동 게임 */
+.behavior-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.beh-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;cursor:pointer;transition:all 0.15s;display:flex;align-items:flex-start;gap:10px;touch-action:manipulation;text-align:left}
+.beh-card:hover{border-color:var(--border2)}
+.beh-card.selected{border-color:var(--accent2);background:rgba(232,121,90,0.1)}
+.beh-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.beh-text{font-size:13px;color:var(--text-muted);line-height:1.5}
+.beh-card.selected .beh-text{color:var(--accent2)}
+.beh-check{margin-left:auto;font-size:16px;opacity:0;transition:opacity 0.15s;flex-shrink:0}
+.beh-card.selected .beh-check{opacity:1}
+.sel-badge{display:inline-block;font-size:12px;background:rgba(232,121,90,0.2);color:var(--accent2);border-radius:999px;padding:3px 10px;margin-left:8px;font-weight:600}
+
+/* 성씨 */
+.date-cards{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.date-card{flex:1;min-width:110px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 12px;text-align:center}
+.dc-lbl{font-size:11px;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px}
+.dc-val{font-family:'Pretendard',sans-serif;font-size:28px;font-weight:800;color:var(--accent)}
+.dc-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+.info-box{background:rgba(133,115,245,0.06);border:1px solid rgba(133,115,245,0.18);border-radius:10px;padding:13px 15px;font-size:14px;color:var(--text-muted);margin-bottom:14px;line-height:1.65}
+.info-box strong{color:var(--accent)}
+
+/* 명단편집 */
+.edit-area{width:100%;min-height:200px;font-family:'Pretendard',sans-serif;font-size:14px;line-height:1.9;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:14px;background:var(--bg);color:var(--text);resize:vertical;margin-top:12px}
+.edit-area:focus{outline:none;border-color:var(--accent)}
+
+/* 기록 */
+.h-item{display:flex;gap:10px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--border);font-size:13px}
+.h-item:last-child{border-bottom:none}
+.h-date{color:var(--text-dim);min-width:88px;font-size:11px}
+.h-mode{color:var(--accent);font-size:11px;min-width:64px;flex-shrink:0}
+.h-names{color:var(--text);line-height:1.6}
+.empty-msg{text-align:center;padding:24px;color:var(--text-dim);font-size:14px}
+
+/* 카운트다운 오버레이 */
+#countdown-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(10,10,16,0.96);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity 0.2s;
+}
+#countdown-overlay.active{opacity:1;pointer-events:all;}
+#cd-number{
+  font-family:'Pretendard',sans-serif;
+  font-size:clamp(8rem,28vw,18rem);
+  font-weight:800;
+  color:var(--cd-accent);
+  line-height:1;
+  text-align:center;
+  text-shadow:0 0 80px rgba(133,115,245,0.5);
+  animation:cdPop 0.7s cubic-bezier(0.36,0.07,0.19,0.97) both;
+}
+#cd-number.pung{color:#ff6060;text-shadow:0 0 120px rgba(255,96,96,0.7);}
+@keyframes cdPop{
+  0%{transform:scale(1.6);opacity:0}
+  40%{transform:scale(0.9);opacity:1}
+  70%{transform:scale(1.05)}
+  100%{transform:scale(1)}
+}
+@keyframes cdFadeOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(0.8)}}
+#cd-sub{font-size:16px;color:#9A96A8;margin-top:16px;letter-spacing:3px}
+
+@media(max-width:600px){
+  .app{padding:0 12px 60px}
+  header{padding:28px 0 20px}
+  .panel{padding:16px}
+  .name-grid{grid-template-columns:repeat(auto-fill,minmax(68px,1fr))}
+  .behavior-grid{grid-template-columns:1fr 1fr}
+  .beh-text{font-size:12px}
+}
+</style>
+</head>
+<body>
+<!-- 카운트다운 오버레이 -->
+<div id="countdown-overlay">
+  <div id="cd-number">5</div>
+  <div id="cd-sub">잠깐만요...</div>
+</div>
+
+<div class="app">
+<header>
+  <div class="header-badge">랜덤 뽑기 시스템</div>
+  <h1>돌고 돌아<br><em>오늘은 네 차례</em></h1>
+  <p class="header-sub">공정하고 재미있는 여러 가지 뽑기 방법</p>
+  <div style="margin-top:14px">
+    <span style="font-size:12px;color:var(--text-muted)">현재 반:</span>
+    <span id="activeClassBadge" style="display:inline-block;font-size:13px;font-weight:700;color:#FFFFFF;background:var(--accent);border-radius:999px;padding:4px 14px;margin-left:6px;cursor:pointer" onclick="switchTab('roster')">1반</span>
+  </div>
+</header>
+
+<!-- 탭 -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('random')"><span class="ti">🎲</span>랜덤<br>뽑기</button>
+  <button class="tab" onclick="switchTab('finger')"><span class="ti">🖐</span>손가락<br>게임</button>
+  <button class="tab" onclick="switchTab('stroke')"><span class="ti">✍️</span>이름<br>획수</button>
+  <button class="tab" onclick="switchTab('surname')"><span class="ti">📅</span>성씨<br>날짜</button>
+  <button class="tab" onclick="switchTab('behavior')"><span class="ti">🎭</span>신체<br>행동</button>
+  <button class="tab" onclick="switchTab('number')"><span class="ti">🔢</span>출석<br>번호</button>
+  <button class="tab" onclick="switchTab('consonant')"><span class="ti">🔤</span>자음<br>게임</button>
+  <button class="tab" onclick="switchTab('oddeven')"><span class="ti">✊</span>홀짝<br>게임</button>
+  <button class="tab" onclick="switchTab('seat')"><span class="ti">📍</span>자리<br>번호</button>
+  <button class="tab" onclick="switchTab('roster')"><span class="ti">👥</span>명단<br>관리</button>
+  <button class="tab" onclick="switchTab('history')"><span class="ti">📋</span>기록</button>
+</div>
+
+<!-- ══════ 게임0: 랜덤 뽑기 ══════ -->
+<div id="tab-random" class="game-screen active">
+  <div class="panel">
+    <div class="panel-title">🎲 랜덤 뽑기</div>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px;line-height:1.7">가장 공정한 완전 무작위 뽑기!</p>
+    <div class="ctrl-row">
+      <div class="ctrl-group">
+        <span class="ctrl-lbl">뽑을 인원:</span>
+        <button class="ctrl-btn" onclick="changeRandCount(-1)">−</button>
+        <span class="ctrl-val" id="randCount">5</span>
+        <button class="ctrl-btn" onclick="changeRandCount(1)">+</button>
+      </div>
+      <span style="margin-left:auto;font-size:13px;color:var(--text-dim)" id="randAvail"></span>
+    </div>
+    <button class="btn-main" onclick="doRandom()">지금 바로 뽑기!</button>
+  </div>
+  <div class="result-box" id="randomResult">
+    <div class="result-label">청소 당번</div>
+    <div class="chips" id="randomChips"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">👥 참여 학생 <span id="randAvailBadge" style="font-size:13px;font-weight:400;color:var(--text-muted)"></span></div>
+    <div class="name-grid" id="randNameGrid"></div>
+    <p class="hint">탭하면 제외됩니다</p>
+  </div>
+</div>
+
+<!-- ══════ 게임1: 손가락 ══════ -->
+<!-- ══════ 게임1: 손가락 숫자 ══════ -->
+<div id="tab-finger" class="game-screen">
+  <div class="panel">
+    <div class="panel-title">🖐 손가락 숫자 게임</div>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px;line-height:1.7">
+      선생님이 목표 숫자(0~10)를 정하면, 학생들이 동시에 손가락을 펍니다.<br>
+      <strong style="color:var(--accent)">그 숫자를 낸 학생</strong>이 청소 당번!
+    </p>
+
+    <!-- 목표 숫자 크게 표시 -->
+    <div class="finger-hero">
+      <div class="dc-lbl" style="margin-bottom:6px">목표 숫자</div>
+      <div class="finger-big" id="fingerTarget">5</div>
+      <div class="finger-range">손가락 0개 ~ 10개</div>
+    </div>
+
+    <!-- 숫자 버튼 0~10 -->
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px" id="fingerBtnGrid"></div>
+
+    <div class="ctrl-row">
+      <button class="btn-ghost" onclick="randomFingerTarget()">🎲 랜덤으로 정하기</button>
+      <span style="margin-left:auto;font-size:13px;color:var(--text-dim)" id="fingerAvail"></span>
+    </div>
+
+    <div style="margin-top:4px;padding:14px;background:var(--surface2);border-radius:12px;font-size:13px;color:var(--text-muted);line-height:1.8">
+      <strong style="color:var(--text);display:block;margin-bottom:6px">진행 방법</strong>
+      ① 선생님이 목표 숫자를 칠판에 쓰거나 외칩니다.<br>
+      ② 학생들이 <strong style="color:var(--accent)">동시에</strong> 한 손 또는 양손 손가락을 폅니다.<br>
+      ③ 목표 숫자와 <strong style="color:var(--accent)">똑같은 수</strong>를 낸 학생이 청소 당번!<br>
+      ④ 해당자가 없으면 다시 도전 또는 숫자 변경
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">👥 참여 학생 <span id="fingerAvailBadge" style="font-size:13px;font-weight:400;color:var(--text-muted)"></span></div>
+    <div class="name-grid" id="fingerNameGrid"></div>
+    <p class="hint">탭하면 제외됩니다</p>
+  </div>
+</div>
+
+<!-- ══════ 게임2: 이름 획수 ══════ -->
+<div id="tab-stroke" class="game-screen">
+  <div class="panel">
+    <div class="panel-title">✍️ 이름 획수 합산</div>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:18px;line-height:1.7">
+      이름 자모의 획수를 자동으로 계산해 순위를 매깁니다.
+    </p>
+    <div class="ctrl-row">
+      <div class="ctrl-group">
+        <span class="ctrl-lbl">인원:</span>
+        <button class="ctrl-btn" onclick="changeStrokeCount(-1)">−</button>
+        <span class="ctrl-val" id="strokeCountVal">1</span>
+        <button class="ctrl-btn" onclick="changeStrokeCount(1)">+</button>
+      </div>
+      <div class="ctrl-group" style="margin-left:auto">
+        <select id="strokeMode" class="ctrl-sel">
+          <option value="most">획수 많은 사람</option>
+          <option value="least">획수 적은 사람</option>
+          <option value="random">🎲 랜덤 뽑기</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-main" onclick="calcStrokeResult()">획수 계산 및 뽑기</button>
+  </div>
+
+  <div class="result-box" id="strokeResult">
+    <div class="result-label">청소 당번</div>
+    <div class="chips" id="strokeResultChips"></div>
+  </div>
+
+  <div class="panel" id="strokeTablePanel" style="display:none">
+    <div class="panel-title">📊 전체 획수 순위</div>
+    <table class="data-table">
+      <thead><tr><th>순위</th><th>이름</th><th style="text-align:right">획수</th></tr></thead>
+      <tbody id="strokeTableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">👥 참여 학생 <span id="strokeAvail" style="font-size:13px;font-weight:400;color:var(--text-muted)"></span></div>
+    <div class="name-grid" id="strokeNameGrid"></div>
+    <p class="hint">탭하면 제외됩니다</p>
+  </div>
+</div>
+
+<!-- ══════ 게임3: 성씨 날짜 ══════ -->
+<div id="tab-surname" class="game-screen">
+  <div class="panel">
+    <div class="panel-title">📅 성씨 가나다 순 날짜 매칭</div>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:18px;line-height:1.7">
+      오늘 날짜 숫자 = 참여 학생 성씨의 가나다 순 번호인 사람이 청소 당번!
+    </p>
+
+    <div class="date-cards">
+      <div class="date-card">
+        <div class="dc-lbl">오늘 날짜</div>
+        <div class="dc-val" id="surnameDate">-</div>
+        <div class="dc-sub">일(日)</div>
+      </div>
+      <div class="date-card">
+        <div class="dc-lbl">월 + 일 합산</div>
+        <div class="dc-val" id="surnameMonthDay">-</div>
+        <div class="dc-sub">합산 숫자</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+      <span class="ctrl-lbl">기준:</span>
+      <select id="surnameMode" class="ctrl-sel" onchange="updateSurnameInfo()">
+        <option value="day">오늘 날짜 (일)</option>
+        <option value="monthday">월 + 일 합산</option>
+      </select>
+    </div>
+
+    <div class="info-box" id="surnameMatchInfo">계산 중...</div>
+    <button class="btn-main" onclick="calcSurnameResult()">매칭 결과 보기</button>
+  </div>
+
+  <div class="result-box" id="surnameResult">
+    <div class="result-label">청소 당번</div>
+    <div class="chips" id="surnameResultChips"></div>
+  </div>
+
+  <div class="panel" id="surnameTablePanel">
+    <div class="panel-title">📊 성씨 가나다 순 목록 (참여 학생 기준)</div>
+    <table class="data-table">
+      <thead><tr><th>번호</th><th>성씨</th><th>해당 학생</th></tr></thead>
+      <tbody id="surnameTableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">👥 참여 학생 <span id="surnameAvail" style="font-size:13px;font-weight:400;color:var(--text-muted)"></span></div>
+    <div class="name-grid" id="surnameNameGrid"></div>
+    <p class="hint">탭하면 제외됩니다</p>
+  </div>
+</div>
+
+<!-- ══════ 게임4: 신체/행동 ══════ -->
+<div id="tab-behavior" class="game-screen">
+  <div class="panel">
+    <div class="panel-title">🎭 신체·행동 기반 뽑기 <span class="sel-badge" id="behSelCount">0개 선택</span></div>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:16px;line-height:1.7">
+      오늘 해당하는 행동 카드를 선택하세요. 선택한 항목에 해당하는 학생이 청소 당번!
+    </p>
+    <div class="behavior-grid" id="behaviorGrid"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <button class="btn-ghost" onclick="clearBehSelection()">선택 초기화</button>
+      <button class="btn-ghost" onclick="randomBehPick()">🎲 랜덤 카드 1장</button>
+    </div>
+  </div>
+
+  <!-- 선택된 조건 표시 -->
+  <div id="behSelectedPanel" class="panel" style="display:none">
+    <div class="panel-title">✅ 선택된 조건</div>
+    <div id="behSelectedList" style="font-size:14px;color:var(--text-muted);line-height:2"></div>
+    <div style="margin-top:14px;padding:14px;background:var(--surface2);border-radius:12px;font-size:13px;color:var(--text-muted)">
+      선생님이 조건을 읽어주면 해당하는 학생이 손을 들거나 일어납니다.<br>
+      해당자가 <strong style="color:var(--accent)">없으면</strong> → 랜덤 뽑기로 전환<br>
+      해당자가 <strong style="color:var(--accent2)">너무 많으면</strong> → 가위바위보로 최종 결정
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ══════ 출석번호 뽑기 ══════ -->
+<div id="tab-number" class="game-screen">
+  <div class="panel">
+    <div class="panel-title">🔢 출석번호 뽑기</div>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px;line-height:1.7">
+      1~<span id="numTotal">40</span>번 중 랜덤으로 번호를 뽑아요.<br>
+      그 번호의 학생이 청소 당번!
+    </p>
+    <div class="ctrl-row" style="margin-bottom:14px">
+      <div class="ctrl-group">
+        <span class="ctrl-lbl">최대 번호:</span>
+        <button class="ctrl-btn" onclick="changeNumMax(-1)">−</button>
+        <span class="ctrl-val" id="numMax">40</span>
+        <button class="ctrl-btn" onclick="changeNumMax(1)">+</button>
+      </div>
+      <div class="ctrl-group" style="margin-left:auto">
+        <span class="ctrl-lbl">몇 명:</span>
+        <button class="ctrl-btn" onclick="changeNumPick(-1)">−</button>
+        <span class="ctrl-val" id="numPick">1</span>
+        <button class="ctrl-btn" onclick="changeNumPick(1)">+</button>
+      </div>
+    </div>
+    <button class="btn-main" onclick="doNumberPick()">번호 뽑기!</button>
+  </div>
+
+  <!-- 로또 공 애니메이션 -->
+  <div id="lottoPanel" style="display:none" class="panel">
+    <div class="panel-title">🎱 추첨 중...</div>
+    <canvas id="lottoCanvas" style="width:100%;border-radius:12px;background:#111;display:block"></canvas>
+  </div>
+
+  <div class="result-box" id="numberResult">
+    <div class="result-label">뽑힌 출석번호</div>
+    <div class="chips" id="numberChips"></div>
+  </div>
+</div>
+
+<!-- ══════ 자음 게임 ══════ -->
+<div id="tab-consonant" class="game-screen">
+  <div class="panel">
+    <div class="panel-title">🔤 이름 자음 게임</div>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:16px;line-height:1.7">
+      특정 자음이 이름에 들어간 학생이 청소 당번!<br>
+      자음을 직접 선택하거나 랜덤으로 뽑으세요.
+    </p>
+    <p style="font-size:11px;letter-spacing:2px;color:var(--text-dim);margin-bottom:8px">자음 선택</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:7px;margin-bottom:14px" id="consonantGrid"></div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn-ghost" onclick="randomConsonant()" style="margin-top:0">🎲 랜덤 자음</button>
+      <button class="btn-ghost" onclick="clearConsonant()" style="margin-top:0">초기화</button>
+    </div>
+    <div class="info-box" id="consonantInfo">자음을 선택하면 해당하는 학생이 표시됩니다</div>
+    <button class="btn-main" onclick="doConsonantPick()" id="consonantPickBtn">결과 발표!</button>
+  </div>
+  <div class="result-box" id="consonantResult">
+    <div class="result-label">청소 당번</div>
+    <div class="chips" id="consonantChips"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">👥 참여 학생 <span id="consonantAvail" style="font-size:13px;font-weight:400;color:var(--text-muted)"></span></div>
+    <div class="name-grid" id="consonantNameGrid"></div>
+    <p class="hint">탭하면 제외됩니다</p>
+  </div>
+</div>
+
+<!-- ══════ 홀짝 게임 ══════ -->
+<div id="tab-oddeven" class="game-screen">
+  <div class="panel">
+    <div class="panel-title">✊ 홀짝 팀 나누기</div>
+
+    <!-- 핵심 설명 -->
+    <div style="background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:18px;font-size:13px;color:var(--text-muted);line-height:2">
+      <strong style="color:var(--text);display:block;margin-bottom:6px">왜 출석번호로 나누나요?</strong>
+      학생이 자유 선택하면 49명이 홀, 1명이 짝을 고를 수 있어요.<br>
+      <strong style="color:var(--accent)">출석번호 기준</strong>으로 나누면 항상 정확히 반반이 보장됩니다.<br>
+      <span style="color:var(--text-dim)">예) 40명 → 홀팀(1·3·5…번) 20명 : 짝팀(2·4·6…번) 20명</span>
+    </div>
+
+    <!-- 팀 카드 -->
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+      <div style="flex:1;background:var(--surface2);border:2px solid var(--border2);border-radius:var(--radius);padding:18px 12px;text-align:center">
+        <div style="font-size:13px;color:var(--text-dim);letter-spacing:1px;margin-bottom:6px">홀수 팀</div>
+        <div style="font-family:'Pretendard',sans-serif;font-size:28px;font-weight:800;color:var(--text)">1·3·5…번</div>
+        <div style="font-size:13px;color:var(--accent);margin-top:6px;font-weight:600">왼손 드세요 🤚</div>
+      </div>
+      <div style="display:flex;align-items:center;font-size:20px;color:var(--text-dim);flex-shrink:0">VS</div>
+      <div style="flex:1;background:var(--surface2);border:2px solid var(--border2);border-radius:var(--radius);padding:18px 12px;text-align:center">
+        <div style="font-size:13px;color:var(--text-dim);letter-spacing:1px;margin-bottom:6px">짝수 팀</div>
+        <div style="font-family:'Pretendard',sans-serif;font-size:28px;font-weight:800;color:var(--text)">2·4·6…번</div>
+        <div style="font-size:13px;color:var(--accent);margin-top:6px;font-weight:600">오른손 드세요 ✋</div>
+      </div>
+    </div>
+
+    <!-- 진행 방법 -->
+    <div style="background:var(--surface2);border-radius:12px;padding:14px 16px;margin-bottom:18px;font-size:13px;color:var(--text-muted);line-height:1.9">
+      <strong style="color:var(--text);display:block;margin-bottom:4px">진행 방법</strong>
+      ① 선생님: <em style="color:var(--accent)">"출석번호 홀수는 왼손, 짝수는 오른손!"</em><br>
+      ② 학생들이 손을 동시에 드는 순간 확정 — 취소 불가<br>
+      ③ 숫자 공개 → 홀/짝 판정 → 해당 팀이 당번 또는 역할 부여
+    </div>
+
+    <!-- 결과 표시 방식 -->
+    <div style="margin-bottom:16px">
+      <p style="font-size:11px;letter-spacing:1px;color:var(--text-dim);margin-bottom:8px">결과 표시</p>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="op-tab active" onclick="setOEMode('clean')" id="oeMode-clean" style="font-size:13px;padding:9px 14px">🧹 청소 당번</button>
+        <button class="op-tab" onclick="setOEMode('debate')" id="oeMode-debate" style="font-size:13px;padding:9px 14px">💬 토론팀</button>
+        <button class="op-tab" onclick="setOEMode('team')" id="oeMode-team" style="font-size:13px;padding:9px 14px">⚽ 두 팀</button>
+      </div>
+    </div>
+
+    <button class="btn-main" onclick="doOEReveal()">🎲 홀짝 공개!</button>
+  </div>
+  <div class="result-box" id="oeResult">
+    <div class="result-label">공개 결과</div>
+    <div id="oeChips"></div>
+  </div>
+</div>
+
+<!-- ══════ 자리 번호 ══════ -->
+<div id="tab-seat" class="game-screen">
+  <div class="panel">
+    <div class="panel-title">📍 자리 번호 뽑기</div>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px;line-height:1.7">
+      줄(가로)과 번호(세로)를 랜덤으로 뽑아 자리를 특정해요!
+    </p>
+    <div class="ctrl-row" style="margin-bottom:14px;flex-wrap:wrap;gap:16px">
+      <div class="ctrl-group">
+        <span class="ctrl-lbl">가로 줄 수:</span>
+        <button class="ctrl-btn" onclick="changeSeat('col',-1)">−</button>
+        <span class="ctrl-val" id="seatCols">6</span>
+        <button class="ctrl-btn" onclick="changeSeat('col',1)">+</button>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-lbl">세로 줄 수:</span>
+        <button class="ctrl-btn" onclick="changeSeat('row',-1)">−</button>
+        <span class="ctrl-val" id="seatRows">7</span>
+        <button class="ctrl-btn" onclick="changeSeat('row',1)">+</button>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-lbl">몇 자리:</span>
+        <button class="ctrl-btn" onclick="changeSeat('pick',-1)">−</button>
+        <span class="ctrl-val" id="seatPick">1</span>
+        <button class="ctrl-btn" onclick="changeSeat('pick',1)">+</button>
+      </div>
+    </div>
+    <div style="font-size:13px;color:var(--text-muted);background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      현재 설정: <strong style="color:var(--text)" id="seatDesc">6줄 × 7번 = 42자리</strong>
+    </div>
+    <button class="btn-main" onclick="doSeatPick()">자리 뽑기!</button>
+  </div>
+  <div class="result-box" id="seatResult">
+    <div class="result-label">뽑힌 자리</div>
+    <div class="chips" id="seatChips"></div>
+  </div>
+</div>
+
+<!-- ══════ 명단 관리 ══════ -->
+<div id="tab-roster" class="game-screen">
+
+  <!-- 사용방법 (접이식) -->
+  <div class="panel" style="padding:0;overflow:hidden">
+    <button onclick="toggleGuide()" style="width:100%;background:none;border:none;cursor:pointer;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;font-family:'Pretendard',sans-serif;touch-action:manipulation">
+      <span style="font-size:15px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px">
+        <span>📖</span> 사용방법
+      </span>
+      <span id="guideArrow" style="font-size:18px;color:var(--text-muted);transition:transform 0.25s">▼</span>
+    </button>
+    <div id="guideBody" style="display:none;padding:0 22px 20px;border-top:1px solid var(--border)">
+      <div style="display:flex;flex-direction:column;gap:14px;margin-top:16px">
+
+        <div style="background:var(--surface2);border-radius:12px;padding:14px 16px">
+          <div style="font-size:12px;letter-spacing:2px;color:var(--accent);margin-bottom:8px">STEP 1 — 반 선택</div>
+          <p style="font-size:13px;color:var(--text-muted);line-height:1.8">
+            아래 격자에서 사용할 <strong style="color:var(--text)">반 번호</strong>를 탭하세요.<br>
+            반 이름은 자유롭게 바꿀 수 있어요 (예: "3학년 2반", "2-4반").
+          </p>
+        </div>
+
+        <div style="background:var(--surface2);border-radius:12px;padding:14px 16px">
+          <div style="font-size:12px;letter-spacing:2px;color:var(--accent);margin-bottom:8px">STEP 2 — 명단 입력</div>
+          <p style="font-size:13px;color:var(--text-muted);line-height:1.8">
+            <strong style="color:var(--text)">✏️ 명단 편집</strong> 버튼을 눌러 학생 이름을 한 줄에 한 명씩 입력 후 <strong style="color:var(--text)">✔ 적용</strong>을 누르세요.<br>
+            1반부터 11반까지 각각 별도로 저장됩니다.
+          </p>
+        </div>
+
+        <div style="background:var(--surface2);border-radius:12px;padding:14px 16px">
+          <div style="font-size:12px;letter-spacing:2px;color:var(--accent);margin-bottom:8px">STEP 3 — 제외 처리</div>
+          <p style="font-size:13px;color:var(--text-muted);line-height:1.8">
+            명단에서 이름을 <strong style="color:var(--text)">탭</strong>하면 취소선이 생기며 오늘 뽑기에서 제외돼요.<br>
+            결석, 이미 당번 한 학생 등에 활용하세요. <strong style="color:var(--text)">✅ 모두 복귀</strong>로 한 번에 초기화할 수 있어요.
+          </p>
+        </div>
+
+        <div style="background:var(--surface2);border-radius:12px;padding:14px 16px">
+          <div style="font-size:12px;letter-spacing:2px;color:var(--accent);margin-bottom:8px">STEP 4 — 다른 기기 / 동료 공유</div>
+          <p style="font-size:13px;color:var(--text-muted);line-height:1.8">
+            <strong style="color:var(--text)">코드 생성 → 복사</strong>로 텍스트 코드를 만들어 메모장, 카카오톡 등에 저장해두세요.<br>
+            다른 기기나 동료 선생님의 앱에서 <strong style="color:var(--text)">가져오기</strong>에 붙여넣으면 명단이 그대로 불러와집니다.<br>
+            <span style="color:var(--text-dim)">전체 반 내보내기: 담임 → 교과 선생님께 공유 시 유용</span>
+          </p>
+        </div>
+
+        <div style="background:var(--surface2);border-radius:12px;padding:14px 16px">
+          <div style="font-size:12px;letter-spacing:2px;color:var(--accent);margin-bottom:8px">💡 교과 선생님 활용 팁</div>
+          <p style="font-size:13px;color:var(--text-muted);line-height:1.8">
+            담임 선생님이 <strong style="color:var(--text)">전체 반 내보내기 코드</strong>를 공유하면,<br>
+            교과 선생님은 가져오기로 한 번에 전 학급 명단을 불러올 수 있어요.<br>
+            수업 전 상단 배지(<span style="color:var(--accent);font-weight:700">반 이름</span>)를 탭해 반을 전환하면 됩니다.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">🏫 반 선택</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:7px;margin-bottom:14px" id="classTabGrid"></div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:13px;color:var(--text-muted)">반 이름:</span>
+      <input id="classNameInput" type="text" maxlength="10"
+        style="font-family:'Pretendard',sans-serif;font-size:14px;padding:7px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--bg);color:var(--text);width:120px"
+        placeholder="예) 3학년 2반">
+      <button class="btn-ghost" onclick="saveClassName()" style="margin-top:0">저장</button>
+    </div>
+  </div>
+
+  <!-- 현재 반 명단 -->
+  <div class="panel">
+    <div class="panel-title">
+      👥 <span id="rosterClassName">1반</span> 학생 명단
+      <span id="rosterCount" style="font-size:13px;font-weight:400;color:var(--text-muted);margin-left:4px"></span>
+    </div>
+    <div class="name-grid" id="rosterGrid"></div>
+    <p class="hint">탭하면 제외/복귀</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <button class="btn-ghost" id="rosterEditToggle" onclick="toggleRosterEdit()">✏️ 명단 편집</button>
+      <button class="btn-ghost" onclick="clearAllExcluded()">✅ 모두 복귀</button>
+      <button class="btn-ghost" onclick="clearClassRoster()" style="color:#c0392b;border-color:#c0392b">🗑 명단 초기화</button>
+    </div>
+    <textarea class="edit-area" id="rosterEditArea" style="display:none" placeholder="한 줄에 한 명씩 입력&#10;예) 김민준&#10;이서연"></textarea>
+    <div id="rosterEditBtns" style="display:none;margin-top:10px;gap:8px;flex-wrap:wrap">
+      <button class="btn-ghost" onclick="applyRosterEdit()" style="border-color:var(--accent);color:var(--accent)">✔ 적용</button>
+      <button class="btn-ghost" onclick="cancelRosterEdit()">✖ 취소</button>
+    </div>
+  </div>
+
+  <!-- 내보내기/가져오기 -->
+  <div class="panel">
+    <div class="panel-title">📤 내보내기 / 가져오기</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.7">
+      <strong style="color:var(--text)">전체 반 데이터</strong>를 한 번에 내보내거나,<br>
+      다른 기기에서 코드를 붙여넣어 가져올 수 있어요.
+    </p>
+
+    <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center">
+      <p style="font-size:11px;letter-spacing:1px;color:var(--text-dim)">내보내기 대상</p>
+      <select id="exportTarget" class="ctrl-sel" style="font-size:13px;padding:5px 10px">
+        <option value="all">전체 반 (1~11반)</option>
+        <option value="current">현재 반만</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;align-items:stretch;margin-bottom:18px">
+      <textarea id="exportCode" readonly style="flex:1;min-height:64px;font-size:11px;font-family:monospace;background:var(--bg);color:var(--text-muted);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px;resize:none;line-height:1.5" placeholder="코드 생성 버튼을 누르세요"></textarea>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn-ghost" onclick="generateExportCode()" style="margin-top:0;white-space:nowrap">코드 생성</button>
+        <button class="btn-ghost" onclick="copyExportCode()" id="copyBtn" style="margin-top:0;white-space:nowrap">복사</button>
+      </div>
+    </div>
+
+    <p style="font-size:11px;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px">가져오기 코드</p>
+    <div style="display:flex;gap:8px;align-items:flex-start">
+      <textarea id="importCode" style="flex:1;min-height:64px;font-size:11px;font-family:monospace;background:var(--bg);color:var(--text-muted);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px;resize:none;line-height:1.5" placeholder="내보내기 코드를 여기에 붙여넣으세요"></textarea>
+      <button class="btn-ghost" onclick="importRosterCode()" style="margin-top:0;white-space:nowrap;border-color:var(--accent);color:var(--accent)">불러오기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ 기록 ══════ -->
+<div id="tab-history" class="game-screen">
+  <div class="panel">
+    <div class="panel-title">📋 뽑기 기록</div>
+    <div id="historyList"></div>
+    <button class="btn-ghost" onclick="clearHistory()" style="margin-top:14px">기록 삭제</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ════════════════════════════════
+// 전역 데이터 — 반별 구조
+// ════════════════════════════════
+const CLASS_COUNT = 11;
+const DEFAULT_STUDENTS = [
+  "강민준","강서연","강예린","강지훈","권나연",
+  "김도윤","김민서","김소율","김지우","김하은",
+  "나예린","류하준","박건우","박나연","박지호",
+  "배수아","서민아","서하은","송예준","신도현",
+  "오수아","오지민","윤채원","이다은","이서준",
+  "이수빈","이지안","임현우","장나은","정우진",
+  "정하윤","조민서","조예원","최다은","최민준",
+  "최예원","한도윤","한서준","황민서","황예린"
+];
+
+// classList[i] = { name, students, excluded }  (i: 0~10 → 1반~11반)
+function initClassList(){
+  const saved = localStorage.getItem('classList_v3');
+  if(saved) return JSON.parse(saved);
+  return Array.from({length:CLASS_COUNT},(_,i)=>({
+    name: `${i+1}반`,
+    students: i===0 ? [...DEFAULT_STUDENTS] : [],
+    excluded: []
+  }));
+}
+
+let classList = initClassList();
+let currentClass = parseInt(localStorage.getItem('currentClass_v3')||'0');
+let gameHistory = JSON.parse(localStorage.getItem('gameHistory_v2')||'[]');
+
+// 현재 반 데이터 접근자
+function cls(){ return classList[currentClass]; }
+let students = cls().students;        // 참조 편의
+let excluded = new Set(cls().excluded);
+
+function syncFromClass(){
+  students = classList[currentClass].students;
+  excluded = new Set(classList[currentClass].excluded);
+}
+
+function saveData(){
+  classList[currentClass].excluded = [...excluded];
+  localStorage.setItem('classList_v3', JSON.stringify(classList));
+  localStorage.setItem('currentClass_v3', String(currentClass));
+  localStorage.setItem('gameHistory_v2', JSON.stringify(gameHistory.slice(0,50)));
+}
+
+function activeStudents(){
+  return students.map((n,i)=>({name:n,idx:i})).filter(s=>!excluded.has(s.idx));
+}
+
+// ════════════════════════════════
+// 탭 전환
+// ════════════════════════════════
+const TAB_ORDER = ['random','finger','stroke','surname','behavior','number','consonant','oddeven','seat','roster','history'];
+function switchTab(name){
+  document.querySelectorAll('.game-screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('.tab')[TAB_ORDER.indexOf(name)].classList.add('active');
+  if(name==='random') renderRandomGame();
+  else if(name==='finger') renderFingerGame();
+  else if(name==='stroke') renderStrokeGame();
+  else if(name==='surname') renderSurnameGame();
+  else if(name==='behavior') renderBehaviorGame();
+  else if(name==='number') renderNumberGame();
+  else if(name==='consonant') renderConsonantGame();
+  else if(name==='oddeven') renderOEGame();
+  else if(name==='seat') renderSeatGame();
+  else if(name==='roster') renderRoster();
+  else if(name==='history') renderHistory();
+}
+
+// ════════════════════════════════
+// 효과음 (Web Audio API)
+// ════════════════════════════════
+let audioCtx = null;
+function getAudio(){ if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+
+function playBeep(freq=440, dur=0.12, vol=0.5, type='sine', delay=0){
+  try{
+    const ctx=getAudio();
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type=type; osc.frequency.value=freq;
+    gain.gain.setValueAtTime(0,ctx.currentTime+delay);
+    gain.gain.linearRampToValueAtTime(vol,ctx.currentTime+delay+0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+delay+dur);
+    osc.start(ctx.currentTime+delay);
+    osc.stop(ctx.currentTime+delay+dur+0.05);
+  }catch(e){}
+}
+
+function soundCountTick(){
+  // 딱! 소리: 고음 짧은 클릭
+  playBeep(880,0.08,0.4,'square');
+}
+
+function soundPung(){
+  // 극적인 폭발음: 날카로운 타격 + 저음 낙하 + 잔향 + 여진
+  try{
+    const ctx=getAudio(), now=ctx.currentTime, sr=ctx.sampleRate;
+
+    // 출력 단: 컴프레서로 찢어지는 소리(클리핑) 방지
+    const comp=ctx.createDynamicsCompressor();
+    comp.threshold.value=-12; comp.knee.value=6; comp.ratio.value=8;
+    comp.attack.value=0.002; comp.release.value=0.3;
+    const out=ctx.createGain(); out.gain.value=1.3;
+    comp.connect(out); out.connect(ctx.destination);
+
+    // 잔향(울림): 노이즈로 만든 2.5초짜리 공간감
+    const irLen=Math.floor(sr*2.5), ir=ctx.createBuffer(2,irLen,sr);
+    for(let c=0;c<2;c++){const d=ir.getChannelData(c);for(let i=0;i<irLen;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/irLen,3);}
+    const verb=ctx.createConvolver(); verb.buffer=ir;
+    const verbG=ctx.createGain(); verbG.gain.value=0.55;
+    verb.connect(verbG); verbG.connect(comp);
+    const send=n=>{n.connect(comp); n.connect(verb);};
+
+    const nLen=Math.floor(sr*1.6), nb=ctx.createBuffer(1,nLen,sr), nd=nb.getChannelData(0);
+    for(let i=0;i<nLen;i++) nd[i]=Math.random()*2-1;
+
+    // 1. 날카로운 '탁!' 타격
+    const ck=ctx.createBufferSource(); ck.buffer=nb;
+    const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=2500;
+    const cg=ctx.createGain(); cg.gain.setValueAtTime(1.0,now); cg.gain.exponentialRampToValueAtTime(0.001,now+0.08);
+    ck.connect(hp); hp.connect(cg); send(cg); ck.start(now); ck.stop(now+0.1);
+
+    // 2. 폭발 몸통: 밝게 터졌다가 점점 둔하게 가라앉음
+    const ns=ctx.createBufferSource(); ns.buffer=nb;
+    const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.Q.value=1;
+    lp.frequency.setValueAtTime(6000,now); lp.frequency.exponentialRampToValueAtTime(80,now+1.3);
+    const ng=ctx.createGain(); ng.gain.setValueAtTime(0.0001,now);
+    ng.gain.exponentialRampToValueAtTime(1.1,now+0.006); ng.gain.exponentialRampToValueAtTime(0.001,now+1.5);
+    ns.connect(lp); lp.connect(ng); send(ng); ns.start(now); ns.stop(now+1.6);
+
+    // 3. 저음 '쿠웅' 낙하 + 살짝 찌그러뜨려 묵직하게
+    const sub=ctx.createOscillator(); sub.type='sine';
+    sub.frequency.setValueAtTime(160,now); sub.frequency.exponentialRampToValueAtTime(26,now+1.0);
+    const sh=ctx.createWaveShaper(), cv=new Float32Array(1024);
+    for(let i=0;i<1024;i++){const x=i/512-1; cv[i]=Math.tanh(x*4);} sh.curve=cv;
+    const sg=ctx.createGain(); sg.gain.setValueAtTime(1.3,now); sg.gain.exponentialRampToValueAtTime(0.001,now+1.2);
+    sub.connect(sh); sh.connect(sg); send(sg); sub.start(now); sub.stop(now+1.3);
+
+    // 4. 여진 '우르릉' (0.25초 뒤)
+    const t2=now+0.25;
+    const r=ctx.createOscillator(); r.type='triangle';
+    r.frequency.setValueAtTime(48,t2); r.frequency.exponentialRampToValueAtTime(22,t2+1.3);
+    const rg=ctx.createGain(); rg.gain.setValueAtTime(0.0001,t2);
+    rg.gain.exponentialRampToValueAtTime(0.8,t2+0.06); rg.gain.exponentialRampToValueAtTime(0.001,t2+1.5);
+    r.connect(rg); send(rg); r.start(t2); r.stop(t2+1.6);
+  }catch(e){}
+}
+
+
+function soundBallBounce(){
+  playBeep(300+Math.random()*200, 0.05, 0.2, 'sine');
+}
+
+function soundBallSelect(){
+  // 정답 차임
+  [523,659,784,1047].forEach((f,i)=>playBeep(f,0.15,0.4,'sine',i*0.1));
+}
+
+// ════════════════════════════════
+// 카운트다운
+// ════════════════════════════════
+function runCountdown(callback){
+  const overlay = document.getElementById('countdown-overlay');
+  const numEl = document.getElementById('cd-number');
+  const subEl = document.getElementById('cd-sub');
+  overlay.classList.add('active');
+  let n = 5;
+  numEl.className = '';
+  numEl.textContent = n;
+  subEl.textContent = '두근두근...';
+  soundCountTick();
+
+  const tick = ()=>{
+    numEl.style.animation='none';
+    void numEl.offsetWidth;
+    numEl.style.animation='cdPop 0.7s cubic-bezier(0.36,0.07,0.19,0.97) both';
+    n--;
+    if(n > 0){
+      numEl.textContent = n;
+      soundCountTick();
+      setTimeout(tick, 750);
+    } else {
+      numEl.textContent = '펑!';
+      numEl.className = 'pung';
+      subEl.textContent = '';
+      soundPung();
+      setTimeout(()=>{
+        overlay.classList.remove('active');
+        callback();
+      }, 980);
+    }
+  };
+  setTimeout(tick, 750);
+}
+
+// ════════════════════════════════
+// 게임 0: 랜덤 뽑기
+// ════════════════════════════════
+let randCount = 5;
+
+function changeRandCount(d){
+  const n = activeStudents().length;
+  randCount = Math.max(1, Math.min(n, randCount+d));
+  document.getElementById('randCount').textContent = randCount;
+}
+
+function doRandom(){
+  const active = activeStudents();
+  if(!active.length){ alert('참여 학생이 없어요!'); return; }
+  if(randCount > active.length){ alert('참여 인원보다 많이 뽑을 수 없어요!'); return; }
+  runCountdown(()=>{
+    const shuffled = [...active].sort(()=>Math.random()-0.5);
+    const winners = shuffled.slice(0, randCount);
+    const chips = document.getElementById('randomChips');
+    chips.innerHTML='';
+    document.querySelectorAll('#randNameGrid .name-btn').forEach(b=>b.classList.remove('highlighted'));
+    winners.forEach((s,i)=>{
+      const chip=document.createElement('div');
+      chip.className='chip chip-gold';
+      chip.style.animationDelay=(i*80)+'ms';
+      chip.innerHTML=`🎲 ${s.name}`;
+      chips.appendChild(chip);
+      document.querySelectorAll('#randNameGrid .name-btn').forEach(b=>{
+        if(b.textContent===s.name) b.classList.add('highlighted');
+      });
+    });
+    document.getElementById('randomResult').classList.add('show');
+    addHistory('랜덤', winners.map(s=>s.name));
+  });
+}
+
+function renderRandomGame(){
+  renderNameGrid('randNameGrid','randAvailBadge',()=>{
+    const n=activeStudents().length;
+    randCount=Math.min(randCount,n||1);
+    document.getElementById('randCount').textContent=randCount;
+    document.getElementById('randAvail').textContent=`참여 ${n}명`;
+  });
+  const n=activeStudents().length;
+  document.getElementById('randAvail').textContent=`참여 ${n}명`;
+  document.getElementById('randAvailBadge').textContent=`(${n}명 참여)`;
+  document.getElementById('randCount').textContent=randCount;
+}
+
+// ════════════════════════════════
+// 공통: 이름 그리드
+// ════════════════════════════════
+function renderNameGrid(gridId, availId, cb){
+  const grid = document.getElementById(gridId);
+  const avail = document.getElementById(availId);
+  grid.innerHTML='';
+  students.forEach((name,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'name-btn'+(excluded.has(i)?' excluded':'');
+    btn.textContent = name;
+    btn.onclick = ()=>{
+      excluded.has(i)?excluded.delete(i):excluded.add(i);
+      saveData(); cb();
+    };
+    grid.appendChild(btn);
+  });
+  if(avail) avail.textContent=`(${activeStudents().length}명 참여)`;
+}
+
+// ════════════════════════════════
+// 게임 1: 손가락 합산
+// ════════════════════════════════
+// ════════════════════════════════
+// 게임 1: 손가락 숫자 게임
+// ════════════════════════════════
+let fingerTarget = 5;
+
+function renderFingerBtns(){
+  const grid = document.getElementById('fingerBtnGrid');
+  grid.innerHTML = '';
+  for(let n=0; n<=10; n++){
+    const btn = document.createElement('button');
+    btn.className = 'op-tab' + (n===fingerTarget?' active':'');
+    btn.textContent = n;
+    btn.style.cssText = 'font-size:20px;font-weight:800;padding:14px 4px;font-family:"Pretendard",sans-serif;';
+    btn.onclick = ()=>{ fingerTarget=n; renderFingerBtns(); document.getElementById('fingerTarget').textContent=n; };
+    grid.appendChild(btn);
+  }
+}
+
+function randomFingerTarget(){
+  fingerTarget = Math.floor(Math.random()*11);
+  renderFingerBtns();
+  document.getElementById('fingerTarget').textContent = fingerTarget;
+}
+
+function renderFingerGame(){
+  renderNameGrid('fingerNameGrid','fingerAvailBadge',()=>{
+    document.getElementById('fingerAvail').textContent = `참여 ${activeStudents().length}명`;
+  });
+  document.getElementById('fingerAvail').textContent = `참여 ${activeStudents().length}명`;
+  renderFingerBtns();
+}
+
+// ════════════════════════════════
+// 게임 2: 이름 획수
+// ════════════════════════════════
+const STROKE={
+  'ㄱ':2,'ㄴ':2,'ㄷ':3,'ㄹ':5,'ㅁ':4,'ㅂ':4,'ㅅ':2,'ㅇ':1,'ㅈ':3,'ㅊ':4,'ㅋ':3,'ㅌ':4,'ㅍ':4,'ㅎ':3,
+  'ㄲ':4,'ㄸ':6,'ㅃ':8,'ㅆ':4,'ㅉ':6,
+  'ㅏ':2,'ㅐ':3,'ㅑ':3,'ㅒ':4,'ㅓ':2,'ㅔ':3,'ㅕ':3,'ㅖ':4,'ㅗ':2,'ㅘ':4,'ㅙ':5,'ㅚ':3,'ㅛ':3,
+  'ㅜ':2,'ㅝ':4,'ㅞ':5,'ㅟ':3,'ㅠ':3,'ㅡ':1,'ㅢ':2,'ㅣ':1,
+  'ㄳ':5,'ㄵ':6,'ㄶ':5,'ㄺ':7,'ㄻ':9,'ㄼ':9,'ㄽ':7,'ㄾ':9,'ㄿ':8,'ㅀ':8,'ㅄ':6,
+};
+
+function decomposeHangul(ch){
+  const code = ch.charCodeAt(0)-0xAC00;
+  if(code<0||code>11171) return [];
+  const jong=code%28, jung=((code-jong)/28)%21, cho=Math.floor((code-jong)/28/21);
+  const C=['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  const V=['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+  const F=['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  const r=[C[cho],V[jung]];
+  if(jong) r.push(F[jong]);
+  return r;
+}
+
+function calcStrokes(name){
+  let t=0;
+  for(const ch of name){
+    for(const j of decomposeHangul(ch)) t+=(STROKE[j]||0);
+  }
+  return t;
+}
+
+let strokeCount=1;
+
+function changeStrokeCount(d){
+  const n=activeStudents().length;
+  strokeCount=Math.max(1,Math.min(n,strokeCount+d));
+  document.getElementById('strokeCountVal').textContent=strokeCount;
+}
+
+function calcStrokeResult(){
+  const active=activeStudents();
+  if(!active.length){alert('참여 학생이 없어요!');return;}
+  runCountdown(()=>{
+  const data=active.map(s=>({...s,strokes:calcStrokes(s.name)}));
+  data.sort((a,b)=>b.strokes-a.strokes);
+
+  const mode=document.getElementById('strokeMode').value;
+  let selected, modeDesc;
+  if(mode==='most'){
+    selected=data.slice(0,strokeCount);
+    modeDesc=`획수 가장 많은 ${strokeCount}명`;
+  } else if(mode==='least'){
+    selected=data.slice(-strokeCount).reverse();
+    modeDesc=`획수 가장 적은 ${strokeCount}명`;
+  } else {
+    // 랜덤 획수 뽑기: 실제 존재하는 획수 중 랜덤 선택 → 해당 획수 학생 전원
+    const strokeSet=[...new Set(data.map(s=>s.strokes))];
+    const pickedStroke=strokeSet[Math.floor(Math.random()*strokeSet.length)];
+    selected=data.filter(s=>s.strokes===pickedStroke);
+    modeDesc=`🎲 랜덤 획수 <strong style="color:var(--accent);font-size:18px">${pickedStroke}획</strong> 해당자`;
+  }
+
+  const chips=document.getElementById('strokeResultChips');
+  chips.innerHTML='';
+  // 모드 설명 태그
+  const modeTag=document.createElement('div');
+  modeTag.style.cssText='width:100%;font-size:13px;color:var(--text-muted);margin-bottom:10px;';
+  modeTag.innerHTML=modeDesc||'';
+  chips.appendChild(modeTag);
+
+  if(!selected.length){
+    const c=document.createElement('div');
+    c.className='chip chip-red';
+    c.textContent='해당 획수 학생 없음 — 다시 시도해보세요';
+    chips.appendChild(c);
+  } else {
+    selected.forEach((s,i)=>{
+      const chip=document.createElement('div');
+      chip.className='chip chip-gold';
+      chip.style.animationDelay=(i*80)+'ms';
+      chip.innerHTML=`✍️ ${s.name} <span style="font-size:12px;opacity:0.7">(${s.strokes}획)</span>`;
+      chips.appendChild(chip);
+    });
+  }
+  document.getElementById('strokeResult').classList.add('show');
+
+  const tbody=document.getElementById('strokeTableBody');
+  tbody.innerHTML='';
+  const selIdxs=new Set(selected.map(s=>s.idx));
+  data.forEach((s,rank)=>{
+    const tr=document.createElement('tr');
+    if(selIdxs.has(s.idx)) tr.className='hl';
+    tr.innerHTML=`<td>${rank+1}</td><td>${s.name}</td><td class="num-right">${s.strokes}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('strokeTablePanel').style.display='block';
+
+  document.querySelectorAll('#strokeNameGrid .name-btn').forEach(btn=>{
+    btn.classList.remove('highlighted');
+    if(selected.find(s=>s.name===btn.textContent)) btn.classList.add('highlighted');
+  });
+
+  addHistory('이름획수', selected.map(s=>s.name));
+  }); // runCountdown end
+}
+
+function renderStrokeGame(){
+  renderNameGrid('strokeNameGrid','strokeAvail',()=>renderStrokeGame());
+  document.getElementById('strokeCountVal').textContent=strokeCount;
+}
+
+// ════════════════════════════════
+// 게임 3: 성씨 날짜 매칭
+// ════════════════════════════════
+// 참여 학생의 성씨를 가나다 순으로 번호 매기기 (한국어 로케일 정렬)
+function renderSurnameGame(){
+  const now=new Date();
+  const month=now.getMonth()+1, day=now.getDate();
+  document.getElementById('surnameDate').textContent=day;
+  document.getElementById('surnameMonthDay').textContent=month+'+'+day+'='+(month+day);
+  renderNameGrid('surnameNameGrid','surnameAvail',()=>renderSurnameGame());
+  updateSurnameInfo();
+  renderSurnameTable();
+}
+
+function renderSurnameTable(){
+  const mode=document.getElementById('surnameMode').value;
+  const now=new Date();
+  const month=now.getMonth()+1, day=now.getDate();
+  const targetNum = mode==='day' ? day : month+day;
+
+  const active=activeStudents();
+  const surnameMap={};
+  active.forEach(s=>{
+    const sur=s.name[0];
+    if(!surnameMap[sur]) surnameMap[sur]=[];
+    surnameMap[sur].push(s.name);
+  });
+  const sortedSurnames=Object.keys(surnameMap).sort((a,b)=>a.localeCompare(b,'ko'));
+
+  const tbody=document.getElementById('surnameTableBody');
+  tbody.innerHTML='';
+  sortedSurnames.forEach((sur,idx)=>{
+    const num=idx+1;
+    const isMatch=num===targetNum;
+    const tr=document.createElement('tr');
+    if(isMatch) tr.className='hl';
+    tr.innerHTML=`<td>${num}</td><td>${sur}</td><td>${surnameMap[sur].join(', ')}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateSurnameInfo(){
+  const mode=document.getElementById('surnameMode').value;
+  const now=new Date();
+  const month=now.getMonth()+1, day=now.getDate();
+  let targetNum, modeDesc;
+  if(mode==='day'){targetNum=day; modeDesc=`오늘 날짜 <strong>${day}일</strong>`;}
+  else{targetNum=month+day; modeDesc=`월+일 합산 <strong>${month}+${day}=${month+day}</strong>`;}
+
+  // 참여 학생 성씨 가나다 정렬
+  const active=activeStudents();
+  const surnameMap={};
+  active.forEach(s=>{
+    const sur=s.name[0];
+    if(!surnameMap[sur]) surnameMap[sur]=[];
+    surnameMap[sur].push(s.name);
+  });
+  const sortedSurnames=Object.keys(surnameMap).sort((a,b)=>a.localeCompare(b,'ko'));
+  const targetSur = sortedSurnames[targetNum-1] || null;
+
+  document.getElementById('surnameMatchInfo').innerHTML=
+    `기준: ${modeDesc}<br>참여 학생 성씨 가나다 순 <strong>${targetNum}번째</strong>: `+
+    (targetSur ? `<strong style="font-size:18px;color:var(--accent)">"${targetSur}"</strong>` : `<span style="color:var(--accent2)">해당 번호 없음 (성씨 종류: ${sortedSurnames.length}가지)</span>`);
+  renderSurnameTable();
+}
+
+function calcSurnameResult(){
+  updateSurnameInfo();
+  runCountdown(()=>{
+  const mode=document.getElementById('surnameMode').value;
+  const now=new Date();
+  const month=now.getMonth()+1, day=now.getDate();
+  const targetNum = mode==='day' ? day : month+day;
+
+  const active=activeStudents();
+  const surnameMap={};
+  active.forEach(s=>{
+    const sur=s.name[0];
+    if(!surnameMap[sur]) surnameMap[sur]=[];
+    surnameMap[sur].push(s.name);
+  });
+  const sortedSurnames=Object.keys(surnameMap).sort((a,b)=>a.localeCompare(b,'ko'));
+
+  let winners=[];
+  sortedSurnames.forEach((sur,idx)=>{
+    if(idx+1===targetNum) winners=surnameMap[sur].map(name=>({name,idx:students.indexOf(name)}));
+  });
+
+  const chips=document.getElementById('surnameResultChips');
+  chips.innerHTML='';
+  if(!winners.length){
+    const chip=document.createElement('div');
+    chip.className='chip chip-red';
+    chip.innerHTML='해당 성씨 없음 — 다른 기준으로 시도하거나 랜덤 뽑기 사용';
+    chips.appendChild(chip);
+  } else {
+    winners.forEach((s,i)=>{
+      const chip=document.createElement('div');
+      chip.className='chip chip-gold';
+      chip.style.animationDelay=(i*80)+'ms';
+      chip.innerHTML=`📅 ${s.name}`;
+      chips.appendChild(chip);
+      document.querySelectorAll('#surnameNameGrid .name-btn').forEach(btn=>{
+        if(btn.textContent===s.name) btn.classList.add('highlighted');
+      });
+    });
+    addHistory('성씨날짜', winners.map(s=>s.name));
+  }
+  document.getElementById('surnameResult').classList.add('show');
+  }); // runCountdown end
+}
+
+// ════════════════════════════════
+// 게임 4: 신체/행동 기반
+// ════════════════════════════════
+const BEHAVIORS = [
+  { icon:'🍱', text:'오늘 매점에 다녀온 사람' },
+  { icon:'🍮', text:'급식 디저트를 안 먹은 사람' },
+  { icon:'🍜', text:'오늘 급식 국을 안 먹은 사람' },
+  { icon:'👋', text:'등교 후 짝꿍에게 인사 안 한 사람' },
+  { icon:'😴', text:'수업 시간에 눈을 감은 사람' },
+  { icon:'🥾', text:'오늘 운동화가 아닌 신발을 신은 사람' },
+  { icon:'💇', text:'오늘 머리를 묶은 사람' },
+  { icon:'👓', text:'오늘 안경을 쓴 사람' },
+  { icon:'🧥', text:'오늘 후드(풀오버)를 입은 사람' },
+  { icon:'🤐', text:'오늘 후드집업을 입은 사람' },
+  { icon:'⌚', text:'손목시계를 차고 온 사람' },
+  { icon:'🎒', text:'가방을 열어놓고 수업 듣는 사람' },
+  { icon:'✏️', text:'지금 연필이 아닌 볼펜을 쓰는 사람' },
+  { icon:'📏', text:'필통에 자(ruler)가 없는 사람' },
+  { icon:'🧃', text:'오늘 음료수를 가져온 사람' },
+  { icon:'💤', text:'오늘 수업 중 하품을 한 사람' },
+  { icon:'🦵', text:'지금 다리를 꼰 사람' },
+  { icon:'📖', text:'지금 교과서가 책상 위에 없는 사람' },
+  { icon:'🧴', text:'오늘 핸드크림이나 로션을 바른 사람' },
+  { icon:'🎧', text:'오늘 이어폰을 가져온 사람' },
+  { icon:'💬', text:'오늘 수업 중 소곤거린 사람' },
+  { icon:'🍫', text:'오늘 과자나 간식을 먹은 사람' },
+  { icon:'💅', text:'지금 손톱이 긴 사람 (본인 판단)' },
+  { icon:'👟', text:'오늘 흰색 신발을 신은 사람' },
+  { icon:'🪑', text:'의자를 뒤로 젖히고 앉은 사람' },
+  { icon:'🎵', text:'오늘 노래를 흥얼거린 사람' },
+  { icon:'🧦', text:'오늘 회색 양말을 신은 사람' },
+  { icon:'✂️', text:'담임선생님보다 머리카락 길이가 짧은 사람' },
+  { icon:'💍', text:'반지를 끼고 있는 사람' },
+  { icon:'👂', text:'귀걸이를 하나 이상 하고 있는 사람' },
+  { icon:'💆', text:'오늘 머리를 풀어헤친 사람' },
+  { icon:'🩳', text:'반바지나 반팔을 입은 사람' },
+  { icon:'👁️', text:'렌즈(콘택트렌즈)를 낀 사람' },
+  { icon:'📱', text:'오늘 태블릿PC를 가져온 사람' },
+];
+
+let selectedBehaviors = new Set();
+
+function renderBehaviorGame(){
+  const grid=document.getElementById('behaviorGrid');
+  grid.innerHTML='';
+  BEHAVIORS.forEach((b,i)=>{
+    const card=document.createElement('div');
+    card.className='beh-card'+(selectedBehaviors.has(i)?' selected':'');
+    card.innerHTML=`<span class="beh-icon">${b.icon}</span><span class="beh-text">${b.text}</span><span class="beh-check">✓</span>`;
+    card.onclick=()=>{
+      selectedBehaviors.has(i)?selectedBehaviors.delete(i):selectedBehaviors.add(i);
+      renderBehaviorGame();
+    };
+    grid.appendChild(card);
+  });
+  updateBehSelected();
+}
+
+function updateBehSelected(){
+  const count=selectedBehaviors.size;
+  document.getElementById('behSelCount').textContent=count+'개 선택';
+  const panel=document.getElementById('behSelectedPanel');
+  const list=document.getElementById('behSelectedList');
+  if(!count){panel.style.display='none';return;}
+  panel.style.display='block';
+  list.innerHTML=[...selectedBehaviors].map(i=>
+    `<div style="padding:3px 0;border-bottom:1px solid var(--border);">${BEHAVIORS[i].icon} ${BEHAVIORS[i].text}</div>`
+  ).join('');
+}
+
+function clearBehSelection(){
+  selectedBehaviors.clear();
+  renderBehaviorGame();
+}
+
+function randomBehPick(){
+  selectedBehaviors.clear();
+  const r=Math.floor(Math.random()*BEHAVIORS.length);
+  selectedBehaviors.add(r);
+  renderBehaviorGame();
+  document.getElementById('behSelectedPanel').scrollIntoView({behavior:'smooth'});
+}
+
+// ════════════════════════════════
+// 명단 관리
+// ════════════════════════════════
+// ════════════════════════════════
+// 반 전환
+// ════════════════════════════════
+function toggleGuide(){
+  const body=document.getElementById('guideBody');
+  const arrow=document.getElementById('guideArrow');
+  const open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  arrow.style.transform=open?'':'rotate(180deg)';
+}
+
+function switchClass(idx){
+  classList[currentClass].excluded=[...excluded]; // 현재 반 제외 목록 저장
+  currentClass = idx;
+  syncFromClass();
+  localStorage.setItem('currentClass_v3', String(currentClass));
+  updateActiveClassBadge();
+  renderRoster();
+  cancelRosterEdit();
+}
+
+function updateActiveClassBadge(){
+  const name = classList[currentClass].name;
+  document.getElementById('activeClassBadge').textContent = name;
+}
+
+// ════════════════════════════════
+// 명단 관리
+// ════════════════════════════════
+function renderRoster(){
+  // 반 탭 그리드
+  const tabGrid = document.getElementById('classTabGrid');
+  tabGrid.innerHTML='';
+  classList.forEach((c,i)=>{
+    const btn=document.createElement('button');
+    const hasStudents=c.students.length>0;
+    btn.style.cssText=`font-family:'Pretendard',sans-serif;font-size:12px;padding:10px 4px;border-radius:var(--radius-sm);border:1px solid ${i===currentClass?'var(--accent)':hasStudents?'var(--border2)':'var(--border)'};background:${i===currentClass?'rgba(133,115,245,0.15)':'var(--surface2)'};color:${i===currentClass?'var(--accent)':hasStudents?'var(--text)':'var(--text-dim)'};cursor:pointer;transition:all 0.15s;touch-action:manipulation;text-align:center;font-weight:${i===currentClass?'700':'400'};`;
+    btn.innerHTML=`<div>${c.name}</div><div style="font-size:10px;opacity:0.7;margin-top:2px">${c.students.length?c.students.length+'명':'비어있음'}</div>`;
+    btn.onclick=()=>switchClass(i);
+    tabGrid.appendChild(btn);
+  });
+
+  // 반 이름 표시
+  document.getElementById('rosterClassName').textContent = classList[currentClass].name;
+  document.getElementById('classNameInput').value = classList[currentClass].name;
+
+  // 학생 그리드
+  const grid=document.getElementById('rosterGrid');
+  grid.innerHTML='';
+  students.forEach((name,i)=>{
+    const btn=document.createElement('button');
+    btn.className='name-btn'+(excluded.has(i)?' excluded':'');
+    btn.textContent=name;
+    btn.onclick=()=>{excluded.has(i)?excluded.delete(i):excluded.add(i);saveData();renderRoster();};
+    grid.appendChild(btn);
+  });
+
+  const n=activeStudents().length;
+  document.getElementById('rosterCount').textContent=`(전체 ${students.length}명, 참여 ${n}명)`;
+  updateActiveClassBadge();
+}
+
+function saveClassName(){
+  const val=document.getElementById('classNameInput').value.trim();
+  if(!val) return;
+  classList[currentClass].name=val;
+  saveData();
+  renderRoster();
+  updateActiveClassBadge();
+}
+
+let rosterEditing=false;
+function toggleRosterEdit(){
+  rosterEditing=!rosterEditing;
+  document.getElementById('rosterEditArea').style.display=rosterEditing?'block':'none';
+  document.getElementById('rosterEditBtns').style.display=rosterEditing?'flex':'none';
+  document.getElementById('rosterEditToggle').textContent=rosterEditing?'✖ 취소':'✏️ 명단 편집';
+  if(rosterEditing) document.getElementById('rosterEditArea').value=students.join('\n');
+}
+function cancelRosterEdit(){
+  rosterEditing=false;
+  const a=document.getElementById('rosterEditArea');
+  const b=document.getElementById('rosterEditBtns');
+  if(a) a.style.display='none';
+  if(b) b.style.display='none';
+  const t=document.getElementById('rosterEditToggle');
+  if(t) t.textContent='✏️ 명단 편집';
+}
+function applyRosterEdit(){
+  const lines=document.getElementById('rosterEditArea').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!lines.length){alert('최소 1명 이상 입력해주세요');return;}
+  classList[currentClass].students=lines;
+  students=classList[currentClass].students;
+  excluded.clear();
+  saveData(); cancelRosterEdit(); renderRoster();
+}
+function clearAllExcluded(){excluded.clear();saveData();renderRoster();}
+function clearClassRoster(){
+  if(!confirm(`${classList[currentClass].name} 명단을 모두 삭제할까요?`)) return;
+  classList[currentClass].students=[];
+  students=classList[currentClass].students;
+  excluded.clear();
+  saveData(); renderRoster();
+}
+
+// ════════════════════════════════
+// 내보내기 / 가져오기
+// ════════════════════════════════
+function generateExportCode(){
+  const target=document.getElementById('exportTarget').value;
+  const payload = target==='all'
+    ? { type:'all', classList, v:3 }
+    : { type:'single', classIdx:currentClass, classData:classList[currentClass], v:3 };
+  document.getElementById('exportCode').value = btoa(encodeURIComponent(JSON.stringify(payload)));
+}
+
+function copyExportCode(){
+  const el=document.getElementById('exportCode');
+  if(!el.value){alert('먼저 "코드 생성" 버튼을 눌러주세요.');return;}
+  el.select(); el.setSelectionRange(0,99999);
+  try{
+    navigator.clipboard.writeText(el.value).then(()=>{
+      const btn=document.getElementById('copyBtn');
+      btn.textContent='✔ 복사됨';
+      setTimeout(()=>btn.textContent='복사',2000);
+    });
+  }catch(e){
+    document.execCommand('copy');
+    const btn=document.getElementById('copyBtn');
+    btn.textContent='✔ 복사됨';
+    setTimeout(()=>btn.textContent='복사',2000);
+  }
+}
+
+function importRosterCode(){
+  const code=document.getElementById('importCode').value.trim();
+  if(!code){alert('가져오기 코드를 입력해주세요.');return;}
+  try{
+    const payload=JSON.parse(decodeURIComponent(atob(code)));
+    if(payload.type==='all'){
+      if(!confirm(`전체 ${payload.classList.length}개 반 데이터를 불러올까요?\n현재 모든 반 명단이 덮어씌워집니다.`)) return;
+      classList=payload.classList;
+      syncFromClass();
+    } else if(payload.type==='single'){
+      const target=payload.classIdx;
+      const name=payload.classData.name;
+      if(!confirm(`${name} 명단(${payload.classData.students.length}명)을 ${classList[currentClass].name}에 불러올까요?`)) return;
+      classList[currentClass]=payload.classData;
+      classList[currentClass].name=classList[currentClass].name; // 이름 유지
+      syncFromClass();
+    } else {
+      // 구버전 호환 (students 배열만 있는 경우)
+      if(!payload.students||!Array.isArray(payload.students)) throw new Error();
+      if(!confirm(`명단 ${payload.students.length}명을 현재 반에 불러올까요?`)) return;
+      classList[currentClass].students=payload.students;
+      syncFromClass();
+    }
+    saveData(); renderRoster();
+    document.getElementById('importCode').value='';
+    alert('명단을 성공적으로 불러왔습니다!');
+  }catch(e){
+    alert('코드가 올바르지 않습니다. 내보내기 코드를 다시 확인해주세요.');
+  }
+}
+
+// ════════════════════════════════
+// 기록
+// ════════════════════════════════
+function addHistory(mode,names){
+  const now=new Date();
+  const d=`${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  gameHistory.unshift({date:d,mode,names});
+  saveData();
+}
+function renderHistory(){
+  const hl=document.getElementById('historyList');
+  if(!gameHistory.length){hl.innerHTML='<p class="empty-msg">아직 기록이 없어요</p>';return;}
+  hl.innerHTML='';
+  gameHistory.slice(0,30).forEach(h=>{
+    const row=document.createElement('div');
+    row.className='h-item';
+    row.innerHTML=`<span class="h-date">${h.date}</span><span class="h-mode">${h.mode}</span><span class="h-names">${h.names.join(', ')}</span>`;
+    hl.appendChild(row);
+  });
+}
+function clearHistory(){if(!confirm('기록을 모두 삭제할까요?'))return;gameHistory=[];saveData();renderHistory();}
+
+// ════════════════════════════════
+// 게임 5: 출석번호 뽑기
+// ════════════════════════════════
+let numMax=40, numPick=1;
+function changeNumMax(d){ numMax=Math.max(1,Math.min(100,numMax+d)); document.getElementById('numMax').textContent=numMax; document.getElementById('numTotal').textContent=numMax; }
+function changeNumPick(d){ numPick=Math.max(1,Math.min(numMax,numPick+d)); document.getElementById('numPick').textContent=numPick; }
+function renderNumberGame(){ document.getElementById('numMax').textContent=numMax; document.getElementById('numTotal').textContent=numMax; document.getElementById('numPick').textContent=numPick; }
+
+function doNumberPick(){
+  const pool=Array.from({length:numMax},(_,i)=>i+1);
+  const shuffled=[...pool].sort(()=>Math.random()-0.5);
+  const picked=shuffled.slice(0,numPick).sort((a,b)=>a-b);
+  document.getElementById('numberResult').classList.remove('show');
+  runLottoAnimation(picked, numMax);
+}
+
+function runLottoAnimation(picked, total){
+  const panel=document.getElementById('lottoPanel');
+  const canvas=document.getElementById('lottoCanvas');
+  panel.style.display='block';
+  panel.scrollIntoView({behavior:'smooth',block:'center'});
+
+  const W=canvas.offsetWidth||340, H=240;
+  canvas.width=W; canvas.height=H;
+  const cx=canvas.getContext('2d');
+
+  const COLORS=['#e74c3c','#e67e22','#f1c40f','#2ecc71','#3498db','#9b59b6','#e91e8c','#1abc9c'];
+  const ballCount=Math.min(total,35);
+  const R=16;
+  const balls=[];
+  for(let i=0;i<ballCount;i++){
+    balls.push({
+      n:i+1,
+      x:R+Math.random()*(W-R*2),
+      y:R+Math.random()*(H-R*2-50),
+      vx:(Math.random()-0.5)*6,
+      vy:(Math.random()-0.5)*6,
+      col:COLORS[i%COLORS.length],
+      alive:true, scale:1
+    });
+  }
+
+  let pickedSoFar=[], phase='shake', shakeFrames=0, pickIdx=0, pickDelay=0, doneFrames=0, raf=null;
+
+  function drawBall(b, alpha=1, selected=false){
+    cx.save();
+    cx.globalAlpha=alpha;
+    cx.translate(b.x, b.y);
+    cx.scale(b.scale||1, b.scale||1);
+    cx.beginPath();
+    cx.arc(0,0,R,0,Math.PI*2);
+    const g=cx.createRadialGradient(-4,-4,2,0,0,R);
+    g.addColorStop(0,'rgba(255,255,255,0.9)');
+    g.addColorStop(0.25,b.col);
+    g.addColorStop(1,'rgba(0,0,0,0.7)');
+    cx.fillStyle=g; cx.fill();
+    if(selected){cx.strokeStyle='#C4B5FD';cx.lineWidth=2.5;cx.stroke();}
+    cx.fillStyle='#fff';
+    cx.font=`bold ${b.n>9?11:13}px 'Pretendard',sans-serif`;
+    cx.textAlign='center'; cx.textBaseline='middle';
+    cx.shadowColor='rgba(0,0,0,0.8)'; cx.shadowBlur=3;
+    cx.fillText(b.n,0,0);
+    cx.restore();
+  }
+
+  function drawSlot(p, i){
+    const bx=26+i*44, by=H-24;
+    cx.save();
+    cx.beginPath(); cx.arc(bx,by,20,0,Math.PI*2);
+    const g=cx.createRadialGradient(bx-5,by-5,2,bx,by,20);
+    g.addColorStop(0,'rgba(255,255,255,0.9)');
+    g.addColorStop(0.25,p.col);
+    g.addColorStop(1,'rgba(0,0,0,0.7)');
+    cx.fillStyle=g; cx.fill();
+    cx.strokeStyle='#C4B5FD'; cx.lineWidth=2.5; cx.stroke();
+    cx.fillStyle='#fff';
+    cx.font=`bold ${p.n>9?11:13}px 'Pretendard',sans-serif`;
+    cx.textAlign='center'; cx.textBaseline='middle';
+    cx.shadowColor='rgba(0,0,0,0.8)'; cx.shadowBlur=3;
+    cx.fillText(p.n,bx,by);
+    cx.restore();
+  }
+
+  function frame(){
+    cx.clearRect(0,0,W,H);
+    // 배경
+    cx.fillStyle='#0d0d18'; cx.fillRect(0,0,W,H);
+    // 슬롯 배경
+    cx.fillStyle='rgba(133,115,245,0.07)'; cx.fillRect(0,H-48,W,48);
+    cx.strokeStyle='rgba(133,115,245,0.3)'; cx.lineWidth=1;
+    cx.beginPath(); cx.moveTo(0,H-48); cx.lineTo(W,H-48); cx.stroke();
+
+    if(phase==='shake'){
+      shakeFrames++;
+      balls.forEach(b=>{
+        if(!b.alive) return;
+        b.x+=b.vx; b.y+=b.vy;
+        if(b.x<R){b.x=R;b.vx=Math.abs(b.vx)+0.5;}
+        if(b.x>W-R){b.x=W-R;b.vx=-Math.abs(b.vx)-0.5;}
+        if(b.y<R){b.y=R;b.vy=Math.abs(b.vy)+0.5;}
+        if(b.y>H-R-50){b.y=H-R-50;b.vy=-Math.abs(b.vy)-0.5;}
+        const spd=Math.sqrt(b.vx*b.vx+b.vy*b.vy);
+        if(spd<3){b.vx*=1.1;b.vy*=1.1;}
+        if(spd>7){b.vx*=0.93;b.vy*=0.93;}
+        drawBall(b);
+      });
+      pickedSoFar.forEach((p,i)=>drawSlot(p,i));
+      if(shakeFrames%8===0) soundBallBounce();
+      if(shakeFrames>100){ phase='pick'; pickDelay=35; }
+      raf=requestAnimationFrame(frame);
+
+    } else if(phase==='pick'){
+      pickDelay--;
+      balls.forEach(b=>{ if(b.alive) drawBall(b); });
+      pickedSoFar.forEach((p,i)=>drawSlot(p,i));
+
+      if(pickDelay<=0 && pickIdx<picked.length){
+        const target=picked[pickIdx];
+        const ball=balls.find(b=>b.n===target&&b.alive);
+        if(ball){
+          ball.alive=false;
+          pickedSoFar.push({...ball});
+          pickIdx++;
+          pickDelay=55;
+          soundBallSelect();
+        }
+      }
+      if(pickIdx>=picked.length && pickDelay<=0){ phase='done'; doneFrames=0; }
+      raf=requestAnimationFrame(frame);
+
+    } else {
+      doneFrames++;
+      balls.forEach(b=>{ if(b.alive){cx.globalAlpha=0.15; drawBall(b); cx.globalAlpha=1;} });
+      pickedSoFar.forEach((p,i)=>drawSlot(p,i));
+
+      if(doneFrames>70){
+        cancelAnimationFrame(raf);
+        const chips=document.getElementById('numberChips');
+        chips.innerHTML='';
+        chips.style.cssText='display:flex;flex-wrap:wrap;gap:18px;justify-content:center;padding:10px 0';
+        const BCOLS=['#e74c3c','#e67e22','#f1c40f','#2ecc71','#3498db','#9b59b6','#e91e8c','#1abc9c'];
+        picked.forEach((n,i)=>{
+          const col=BCOLS[(n-1)%BCOLS.length];
+          const card=document.createElement('div');
+          card.style.cssText=`display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:clamp(88px,20vw,128px);height:clamp(88px,20vw,128px);border-radius:50%;background:radial-gradient(circle at 35% 32%, rgba(255,255,255,0.95) 0%, ${col} 40%, #111 100%);box-shadow:0 0 28px ${col}99,0 4px 16px rgba(0,0,0,0.5);animation:popIn 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i*130}ms both;flex-shrink:0;`;
+          card.innerHTML=`<span style="font-family:'Pretendard',sans-serif;font-size:clamp(2.2rem,8vw,3.6rem);font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.8);line-height:1">${n}</span><span style="font-size:13px;color:rgba(255,255,255,0.85);margin-top:2px;font-weight:600">번</span>`;
+          chips.appendChild(card);
+        });
+        document.getElementById('numberResult').classList.add('show');
+        addHistory('출석번호', picked.map(n=>n+'번'));
+        return;
+      }
+      raf=requestAnimationFrame(frame);
+    }
+  }
+  frame();
+}
+
+// ════════════════════════════════
+// 게임 6: 자음 게임
+// ════════════════════════════════
+const CONSONANTS = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+let selectedConsonant = null;
+
+function getNameConsonants(name){
+  const result=[];
+  for(const ch of name){
+    const jamos=decomposeHangul(ch);
+    if(jamos.length) result.push(jamos[0]); // 초성만
+  }
+  return result;
+}
+
+function renderConsonantGame(){
+  const grid=document.getElementById('consonantGrid');
+  grid.innerHTML='';
+  CONSONANTS.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.className='op-tab'+(selectedConsonant===c?' active':'');
+    btn.style.cssText='font-size:18px;font-weight:700;padding:12px 4px;';
+    btn.textContent=c;
+    btn.onclick=()=>{ selectedConsonant=c; renderConsonantGame(); updateConsonantInfo(); };
+    grid.appendChild(btn);
+  });
+  renderNameGrid('consonantNameGrid','consonantAvail',()=>{ renderConsonantGame(); });
+  updateConsonantInfo();
+}
+
+function updateConsonantInfo(){
+  if(!selectedConsonant){ document.getElementById('consonantInfo').innerHTML='자음을 선택하면 해당하는 학생이 표시됩니다'; return; }
+  const active=activeStudents();
+  const matched=active.filter(s=>getNameConsonants(s.name).includes(selectedConsonant));
+  document.getElementById('consonantInfo').innerHTML=
+    `이름에 <strong style="font-size:18px;color:var(--accent)">${selectedConsonant}</strong>이 들어간 학생: `+
+    (matched.length ? `<strong style="color:var(--accent)">${matched.map(s=>s.name).join(', ')}</strong> (${matched.length}명)` : '<span style="color:var(--accent2)">해당 없음</span>');
+  document.querySelectorAll('#consonantNameGrid .name-btn').forEach(btn=>{
+    btn.classList.remove('highlighted');
+    const s=activeStudents().find(s=>s.name===btn.textContent);
+    if(s && getNameConsonants(s.name).includes(selectedConsonant)) btn.classList.add('highlighted');
+  });
+}
+
+function clearConsonant(){ selectedConsonant=null; renderConsonantGame(); }
+function randomConsonant(){ selectedConsonant=CONSONANTS[Math.floor(Math.random()*CONSONANTS.length)]; renderConsonantGame(); updateConsonantInfo(); }
+
+function doConsonantPick(){
+  if(!selectedConsonant){ alert('자음을 선택해주세요!'); return; }
+  const active=activeStudents();
+  const matched=active.filter(s=>getNameConsonants(s.name).includes(selectedConsonant));
+  runCountdown(()=>{
+    const chips=document.getElementById('consonantChips');
+    chips.innerHTML='';
+    if(!matched.length){
+      const c=document.createElement('div'); c.className='chip chip-red';
+      c.innerHTML=`"${selectedConsonant}" 해당자 없음 — 다른 자음으로 시도하세요`;
+      chips.appendChild(c);
+    } else {
+      matched.forEach((s,i)=>{
+        const chip=document.createElement('div');
+        chip.className='chip chip-gold';
+        chip.style.animationDelay=(i*80)+'ms';
+        chip.innerHTML=`🔤 ${s.name}`;
+        chips.appendChild(chip);
+      });
+      addHistory('자음('+selectedConsonant+')', matched.map(s=>s.name));
+    }
+    document.getElementById('consonantResult').classList.add('show');
+  });
+}
+
+// ════════════════════════════════
+// 게임 7: 홀짝 팀 나누기
+// ════════════════════════════════
+let oeMode='clean';
+
+function renderOEGame(){} // 설정값 없음
+
+function setOEMode(mode){
+  oeMode=mode;
+  ['clean','debate','team'].forEach(m=>{
+    const el=document.getElementById('oeMode-'+m);
+    if(el) el.classList.toggle('active',m===mode);
+  });
+}
+
+function doOEReveal(){
+  const isOdd = Math.random() < 0.5; // true=홀수팀이 당번/찬성/A팀
+
+  runCountdown(()=>{
+    const container = document.getElementById('oeChips');
+    container.innerHTML = '';
+
+    // 결과 헤드라인
+    const headline = document.createElement('div');
+    headline.style.cssText = 'text-align:center;margin-bottom:22px;animation:popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both';
+
+    let headText = '';
+    if(oeMode==='clean') headText = isOdd ? '홀수팀 청소 당번!' : '짝수팀 청소 당번!';
+    else if(oeMode==='debate') headText = isOdd ? '홀수팀 찬성 / 짝수팀 반대' : '홀수팀 반대 / 짝수팀 찬성';
+    else headText = isOdd ? '홀수팀 A팀 / 짝수팀 B팀' : '홀수팀 B팀 / 짝수팀 A팀';
+
+    headline.innerHTML = `
+      <div style="font-size:12px;letter-spacing:3px;color:var(--text-dim);margin-bottom:10px">오늘의 결과</div>
+      <div style="font-family:'Pretendard',sans-serif;font-size:clamp(1.6rem,6vw,2.6rem);font-weight:800;color:var(--accent);line-height:1.2">${headText}</div>`;
+    container.appendChild(headline);
+
+    // 두 팀 결과 카드
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;gap:10px';
+
+    // 모드별 라벨 결정
+    let oddLabel, evenLabel, oddColor, evenColor;
+    if(oeMode==='clean'){
+      oddLabel  = isOdd  ? '🧹 청소 당번' : '🎉 오늘 면제!';
+      evenLabel = !isOdd ? '🧹 청소 당번' : '🎉 오늘 면제!';
+      oddColor  = isOdd  ? 'var(--accent2)' : 'var(--accent3)';
+      evenColor = !isOdd ? 'var(--accent2)' : 'var(--accent3)';
+    } else if(oeMode==='debate'){
+      oddLabel  = isOdd  ? '💬 찬성 측' : '💬 반대 측';
+      evenLabel = isOdd  ? '💬 반대 측' : '💬 찬성 측';
+      oddColor  = 'var(--accent)';
+      evenColor = 'var(--accent)';
+    } else {
+      oddLabel  = isOdd  ? '⚽ A팀' : '⚽ B팀';
+      evenLabel = isOdd  ? '⚽ B팀' : '⚽ A팀';
+      oddColor  = 'var(--accent)';
+      evenColor = 'var(--accent)';
+    }
+
+    [
+      { emoji:'🤚', label:'왼손 (홀수번)', name:'홀수 팀', result: oddLabel,  col: oddColor  },
+      { emoji:'✋', label:'오른손 (짝수번)', name:'짝수 팀', result: evenLabel, col: evenColor },
+    ].forEach((t, i) => {
+      const card = document.createElement('div');
+      card.style.cssText = `flex:1;text-align:center;padding:18px 10px;border-radius:14px;background:var(--surface2);border:2px solid var(--border2);animation:popIn 0.45s ease ${0.2+i*0.12}s both`;
+      card.innerHTML = `
+        <div style="font-size:32px;margin-bottom:8px">${t.emoji}</div>
+        <div style="font-size:11px;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px">${t.label}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;font-weight:600">${t.name}</div>
+        <div style="font-size:16px;font-weight:700;color:${t.col}">${t.result}</div>`;
+      wrap.appendChild(card);
+    });
+    container.appendChild(wrap);
+
+    document.getElementById('oeResult').classList.add('show');
+    addHistory('홀짝', [headText]);
+  });
+}
+
+// ════════════════════════════════
+// 게임 8: 자리 번호 뽑기
+// ════════════════════════════════
+let seatCols=6, seatRows=7, seatPick=1;
+
+function changeSeat(type,d){
+  if(type==='col') seatCols=Math.max(1,Math.min(20,seatCols+d));
+  if(type==='row') seatRows=Math.max(1,Math.min(20,seatRows+d));
+  if(type==='pick') seatPick=Math.max(1,Math.min(seatCols*seatRows,seatPick+d));
+  document.getElementById('seatCols').textContent=seatCols;
+  document.getElementById('seatRows').textContent=seatRows;
+  document.getElementById('seatPick').textContent=seatPick;
+  document.getElementById('seatDesc').textContent=`${seatCols}줄 × ${seatRows}번 = ${seatCols*seatRows}자리`;
+}
+
+function renderSeatGame(){
+  document.getElementById('seatCols').textContent=seatCols;
+  document.getElementById('seatRows').textContent=seatRows;
+  document.getElementById('seatPick').textContent=seatPick;
+  document.getElementById('seatDesc').textContent=`${seatCols}줄 × ${seatRows}번 = ${seatCols*seatRows}자리`;
+}
+
+function doSeatPick(){
+  const total=seatCols*seatRows;
+  const pool=[];
+  for(let c=1;c<=seatCols;c++) for(let r=1;r<=seatRows;r++) pool.push({col:c,row:r});
+  const shuffled=pool.sort(()=>Math.random()-0.5);
+  const picked=shuffled.slice(0,Math.min(seatPick,total));
+  runCountdown(()=>{
+    const chips=document.getElementById('seatChips');
+    chips.innerHTML='';
+    chips.style.cssText='display:flex;flex-wrap:wrap;gap:14px;justify-content:center;padding:8px 0';
+    picked.forEach((s,i)=>{
+      const card=document.createElement('div');
+      card.style.cssText=`display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:clamp(90px,20vw,130px);padding:18px 14px;border-radius:16px;background:rgba(133,115,245,0.1);border:2px solid var(--accent);animation:popIn 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i*130}ms both;`;
+      card.innerHTML=`
+        <span style="font-size:11px;letter-spacing:2px;color:var(--accent);opacity:0.8;margin-bottom:6px">자리</span>
+        <span style="font-family:'Pretendard',sans-serif;font-size:clamp(2rem,8vw,3rem);font-weight:800;color:var(--accent);line-height:1">${s.col}줄</span>
+        <span style="font-family:'Pretendard',sans-serif;font-size:clamp(2rem,8vw,3rem);font-weight:800;color:var(--text);line-height:1">${s.row}번</span>`;
+      chips.appendChild(card);
+    });
+    document.getElementById('seatResult').classList.add('show');
+    addHistory('자리번호', picked.map(s=>`${s.col}줄 ${s.row}번`));
+  });
+}
+
+// ════════════════════════════════
+// 초기화
+// ════════════════════════════════
+syncFromClass();
+updateActiveClassBadge();
+renderRandomGame();
+</script>
+</body>
+</html>
