@@ -161,6 +161,14 @@ select.ctrl-sel{font-family:'Pretendard',sans-serif;font-size:14px;padding:8px 1
 @keyframes cdFadeOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(0.8)}}
 #cd-sub{font-size:16px;color:#9A96A8;margin-top:16px;letter-spacing:3px}
 
+/* 출석번호 결과 전체화면 */
+#number-reveal{position:fixed;inset:0;z-index:9998;background:rgba(250,248,245,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4vmin;padding:24px;opacity:0;pointer-events:none;transition:opacity 0.3s;cursor:pointer}
+#number-reveal.active{opacity:1;pointer-events:all}
+.nr-label{font-size:clamp(18px,3.4vmin,30px);font-weight:700;color:var(--accent);letter-spacing:4px}
+.nr-balls{display:flex;flex-wrap:wrap;gap:4vmin;justify-content:center;align-items:center;max-width:96vw}
+.nr-hint{font-size:clamp(13px,2vmin,16px);color:var(--text-dim)}
+@keyframes nrPop{0%{opacity:0;transform:scale(0.3)}60%{opacity:1;transform:scale(1.08)}100%{transform:scale(1)}}
+
 @media(max-width:600px){
   .app{padding:0 12px 60px}
   header{padding:28px 0 20px}
@@ -176,6 +184,13 @@ select.ctrl-sel{font-family:'Pretendard',sans-serif;font-size:14px;padding:8px 1
 <div id="countdown-overlay">
   <div id="cd-number">5</div>
   <div id="cd-sub">잠깐만요...</div>
+</div>
+
+<!-- 출석번호 결과 전체화면 -->
+<div id="number-reveal" onclick="closeNumberReveal()">
+  <div class="nr-label">오늘의 청소 당번</div>
+  <div class="nr-balls" id="nrBalls"></div>
+  <div class="nr-hint">화면을 터치하면 닫혀요</div>
 </div>
 
 <div class="app">
@@ -1507,6 +1522,25 @@ const BALL_COLORS=[
   ['#BAE6FD','#1E5F8C'],['#FECACA','#A63A3A'],['#E9D5FF','#6B3FA0'],['#FED7AA','#9A4A12']
 ];
 
+// 뽑힌 번호를 화면 전체에 크게 보여주기
+function showNumberReveal(picked){
+  const k=picked.length;
+  const size = k===1 ? 'min(60vmin,440px)' : k===2 ? 'min(40vmin,340px)' : k<=4 ? 'min(30vmin,260px)' : 'min(21vmin,190px)';
+  const box=document.getElementById('nrBalls');
+  box.innerHTML='';
+  picked.forEach((n,i)=>{
+    const [bg,ink]=BALL_COLORS[(n-1)%BALL_COLORS.length];
+    const ball=document.createElement('div');
+    ball.style.cssText=`position:relative;width:${size};height:${size};border-radius:50%;background:${bg};border:6px solid #fff;box-shadow:0 0 0 3px ${ink}22,0 24px 60px rgba(133,115,245,0.25);display:flex;flex-direction:column;align-items:center;justify-content:center;animation:nrPop 0.6s cubic-bezier(0.34,1.56,0.64,1) ${i*180}ms both`;
+    ball.innerHTML=`<span style="position:absolute;top:11%;left:17%;width:13%;height:13%;border-radius:50%;background:rgba(255,255,255,0.6)"></span><span style="font-size:calc(${size} * 0.44);font-weight:800;color:${ink};line-height:1;letter-spacing:-0.03em">${n}</span><span style="font-size:calc(${size} * 0.09);font-weight:700;color:${ink};opacity:0.75;margin-top:2%">번</span>`;
+    box.appendChild(ball);
+  });
+  document.getElementById('number-reveal').classList.add('active');
+}
+function closeNumberReveal(){
+  document.getElementById('number-reveal').classList.remove('active');
+}
+
 function runLottoAnimation(picked, total){
   const panel=document.getElementById('lottoPanel');
   const canvas=document.getElementById('lottoCanvas');
@@ -1628,6 +1662,7 @@ function runLottoAnimation(picked, total){
         });
         document.getElementById('numberResult').classList.add('show');
         addHistory('출석번호', picked.map(n=>n+'번'));
+        showNumberReveal(picked);
         return;
       }
       raf=requestAnimationFrame(frame);
