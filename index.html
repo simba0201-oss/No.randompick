@@ -396,8 +396,6 @@ select.ctrl-sel{font-family:'Pretendard',sans-serif;font-size:14px;padding:8px 1
   </div>
 </div>
 
-</div>
-
 <!-- ══════ 출석번호 뽑기 ══════ -->
 <div id="tab-number" class="game-screen">
   <div class="panel">
@@ -426,7 +424,7 @@ select.ctrl-sel{font-family:'Pretendard',sans-serif;font-size:14px;padding:8px 1
   <!-- 로또 공 애니메이션 -->
   <div id="lottoPanel" style="display:none" class="panel">
     <div class="panel-title">🎱 추첨 중...</div>
-    <canvas id="lottoCanvas" style="width:100%;border-radius:12px;background:#111;display:block"></canvas>
+    <canvas id="lottoCanvas" style="width:100%;border-radius:14px;background:#F5F2FC;border:1px solid var(--border);display:block"></canvas>
   </div>
 
   <div class="result-box" id="numberResult">
@@ -1503,82 +1501,77 @@ function doNumberPick(){
   runLottoAnimation(picked, numMax);
 }
 
+// 파스텔 공 색상 (배경색, 글자색)
+const BALL_COLORS=[
+  ['#DDD6FE','#4C3FA8'],['#FBCFE8','#9D2A5E'],['#BBF7D0','#1F7A4D'],['#FDE68A','#8A5A00'],
+  ['#BAE6FD','#1E5F8C'],['#FECACA','#A63A3A'],['#E9D5FF','#6B3FA0'],['#FED7AA','#9A4A12']
+];
+
 function runLottoAnimation(picked, total){
   const panel=document.getElementById('lottoPanel');
   const canvas=document.getElementById('lottoCanvas');
   panel.style.display='block';
   panel.scrollIntoView({behavior:'smooth',block:'center'});
 
-  const W=canvas.offsetWidth||340, H=240;
-  canvas.width=W; canvas.height=H;
+  // 고해상도 화면에서도 선명하게 (dpr: 화면 픽셀 밀도)
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.offsetWidth||340, H=360, SLOT=96;
+  canvas.width=W*dpr; canvas.height=H*dpr; canvas.style.height=H+'px';
   const cx=canvas.getContext('2d');
+  cx.setTransform(dpr,0,0,dpr,0,0);
 
-  const COLORS=['#e74c3c','#e67e22','#f1c40f','#2ecc71','#3498db','#9b59b6','#e91e8c','#1abc9c'];
+  const R=Math.max(22,Math.min(32,W/22));      // 공 반지름 (화면 폭에 맞춰)
+  const SR=Math.min(36,R+6);                    // 결과 슬롯 공 반지름
   const ballCount=Math.min(total,35);
-  const R=16;
   const balls=[];
   for(let i=0;i<ballCount;i++){
+    const c=BALL_COLORS[i%BALL_COLORS.length];
     balls.push({
       n:i+1,
       x:R+Math.random()*(W-R*2),
-      y:R+Math.random()*(H-R*2-50),
-      vx:(Math.random()-0.5)*6,
-      vy:(Math.random()-0.5)*6,
-      col:COLORS[i%COLORS.length],
-      alive:true, scale:1
+      y:R+Math.random()*(H-SLOT-R*2),
+      vx:(Math.random()-0.5)*7,
+      vy:(Math.random()-0.5)*7,
+      bg:c[0], ink:c[1], alive:true
     });
   }
+  // 뽑힌 번호가 35 초과면 화면에 공이 없으므로 슬롯 색만 지정
+  const colorOf=n=>BALL_COLORS[(n-1)%BALL_COLORS.length];
 
   let pickedSoFar=[], phase='shake', shakeFrames=0, pickIdx=0, pickDelay=0, doneFrames=0, raf=null;
 
-  function drawBall(b, alpha=1, selected=false){
+  function circle(x,y,r,bg,ink,n,ring){
     cx.save();
-    cx.globalAlpha=alpha;
-    cx.translate(b.x, b.y);
-    cx.scale(b.scale||1, b.scale||1);
-    cx.beginPath();
-    cx.arc(0,0,R,0,Math.PI*2);
-    const g=cx.createRadialGradient(-4,-4,2,0,0,R);
-    g.addColorStop(0,'rgba(255,255,255,0.9)');
-    g.addColorStop(0.25,b.col);
-    g.addColorStop(1,'rgba(0,0,0,0.7)');
-    cx.fillStyle=g; cx.fill();
-    if(selected){cx.strokeStyle='#C4B5FD';cx.lineWidth=2.5;cx.stroke();}
-    cx.fillStyle='#fff';
-    cx.font=`bold ${b.n>9?11:13}px 'Pretendard',sans-serif`;
+    cx.beginPath(); cx.arc(x,y,r,0,Math.PI*2);
+    cx.fillStyle=bg; cx.fill();
+    cx.lineWidth=ring?3:1;
+    cx.strokeStyle=ring?'#8573F5':'rgba(45,45,58,0.08)';
+    cx.stroke();
+    // 은은한 하이라이트
+    cx.beginPath(); cx.arc(x-r*0.35,y-r*0.38,r*0.22,0,Math.PI*2);
+    cx.fillStyle='rgba(255,255,255,0.65)'; cx.fill();
+    cx.fillStyle=ink;
+    cx.font=`800 ${Math.round(r*(n>9?0.78:0.92))}px 'Pretendard',sans-serif`;
     cx.textAlign='center'; cx.textBaseline='middle';
-    cx.shadowColor='rgba(0,0,0,0.8)'; cx.shadowBlur=3;
-    cx.fillText(b.n,0,0);
+    cx.fillText(n,x,y+1);
     cx.restore();
   }
 
-  function drawSlot(p, i){
-    const bx=26+i*44, by=H-24;
-    cx.save();
-    cx.beginPath(); cx.arc(bx,by,20,0,Math.PI*2);
-    const g=cx.createRadialGradient(bx-5,by-5,2,bx,by,20);
-    g.addColorStop(0,'rgba(255,255,255,0.9)');
-    g.addColorStop(0.25,p.col);
-    g.addColorStop(1,'rgba(0,0,0,0.7)');
-    cx.fillStyle=g; cx.fill();
-    cx.strokeStyle='#C4B5FD'; cx.lineWidth=2.5; cx.stroke();
-    cx.fillStyle='#fff';
-    cx.font=`bold ${p.n>9?11:13}px 'Pretendard',sans-serif`;
-    cx.textAlign='center'; cx.textBaseline='middle';
-    cx.shadowColor='rgba(0,0,0,0.8)'; cx.shadowBlur=3;
-    cx.fillText(p.n,bx,by);
-    cx.restore();
+  function drawBg(){
+    cx.clearRect(0,0,W,H);
+    cx.fillStyle='#F5F2FC'; cx.fillRect(0,0,W,H);
+    cx.fillStyle='#FFFFFF'; cx.fillRect(0,H-SLOT,W,SLOT);
+    cx.strokeStyle='rgba(133,115,245,0.25)'; cx.lineWidth=1;
+    cx.beginPath(); cx.moveTo(0,H-SLOT); cx.lineTo(W,H-SLOT); cx.stroke();
+  }
+
+  function drawSlots(){
+    const gap=SR*2+12, start=Math.max(SR+12,(W-gap*(picked.length-1))/2);
+    pickedSoFar.forEach((p,i)=>circle(start+i*gap,H-SLOT/2,SR,p.bg,p.ink,p.n,true));
   }
 
   function frame(){
-    cx.clearRect(0,0,W,H);
-    // 배경
-    cx.fillStyle='#0d0d18'; cx.fillRect(0,0,W,H);
-    // 슬롯 배경
-    cx.fillStyle='rgba(133,115,245,0.07)'; cx.fillRect(0,H-48,W,48);
-    cx.strokeStyle='rgba(133,115,245,0.3)'; cx.lineWidth=1;
-    cx.beginPath(); cx.moveTo(0,H-48); cx.lineTo(W,H-48); cx.stroke();
-
+    drawBg();
     if(phase==='shake'){
       shakeFrames++;
       balls.forEach(b=>{
@@ -1587,52 +1580,50 @@ function runLottoAnimation(picked, total){
         if(b.x<R){b.x=R;b.vx=Math.abs(b.vx)+0.5;}
         if(b.x>W-R){b.x=W-R;b.vx=-Math.abs(b.vx)-0.5;}
         if(b.y<R){b.y=R;b.vy=Math.abs(b.vy)+0.5;}
-        if(b.y>H-R-50){b.y=H-R-50;b.vy=-Math.abs(b.vy)-0.5;}
+        if(b.y>H-SLOT-R){b.y=H-SLOT-R;b.vy=-Math.abs(b.vy)-0.5;}
         const spd=Math.sqrt(b.vx*b.vx+b.vy*b.vy);
         if(spd<3){b.vx*=1.1;b.vy*=1.1;}
-        if(spd>7){b.vx*=0.93;b.vy*=0.93;}
-        drawBall(b);
+        if(spd>8){b.vx*=0.93;b.vy*=0.93;}
+        circle(b.x,b.y,R,b.bg,b.ink,b.n,false);
       });
-      pickedSoFar.forEach((p,i)=>drawSlot(p,i));
+      drawSlots();
       if(shakeFrames%8===0) soundBallBounce();
       if(shakeFrames>100){ phase='pick'; pickDelay=35; }
       raf=requestAnimationFrame(frame);
 
     } else if(phase==='pick'){
       pickDelay--;
-      balls.forEach(b=>{ if(b.alive) drawBall(b); });
-      pickedSoFar.forEach((p,i)=>drawSlot(p,i));
-
+      balls.forEach(b=>{ if(b.alive) circle(b.x,b.y,R,b.bg,b.ink,b.n,false); });
+      drawSlots();
       if(pickDelay<=0 && pickIdx<picked.length){
         const target=picked[pickIdx];
         const ball=balls.find(b=>b.n===target&&b.alive);
-        if(ball){
-          ball.alive=false;
-          pickedSoFar.push({...ball});
-          pickIdx++;
-          pickDelay=55;
-          soundBallSelect();
-        }
+        if(ball) ball.alive=false;
+        const c=colorOf(target);
+        pickedSoFar.push({n:target,bg:c[0],ink:c[1]});
+        pickIdx++; pickDelay=55;
+        soundBallSelect();
       }
       if(pickIdx>=picked.length && pickDelay<=0){ phase='done'; doneFrames=0; }
       raf=requestAnimationFrame(frame);
 
     } else {
       doneFrames++;
-      balls.forEach(b=>{ if(b.alive){cx.globalAlpha=0.15; drawBall(b); cx.globalAlpha=1;} });
-      pickedSoFar.forEach((p,i)=>drawSlot(p,i));
+      cx.globalAlpha=0.18;
+      balls.forEach(b=>{ if(b.alive) circle(b.x,b.y,R,b.bg,b.ink,b.n,false); });
+      cx.globalAlpha=1;
+      drawSlots();
 
       if(doneFrames>70){
         cancelAnimationFrame(raf);
         const chips=document.getElementById('numberChips');
         chips.innerHTML='';
         chips.style.cssText='display:flex;flex-wrap:wrap;gap:18px;justify-content:center;padding:10px 0';
-        const BCOLS=['#e74c3c','#e67e22','#f1c40f','#2ecc71','#3498db','#9b59b6','#e91e8c','#1abc9c'];
         picked.forEach((n,i)=>{
-          const col=BCOLS[(n-1)%BCOLS.length];
+          const [bg,ink]=colorOf(n);
           const card=document.createElement('div');
-          card.style.cssText=`display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:clamp(88px,20vw,128px);height:clamp(88px,20vw,128px);border-radius:50%;background:radial-gradient(circle at 35% 32%, rgba(255,255,255,0.95) 0%, ${col} 40%, #111 100%);box-shadow:0 0 28px ${col}99,0 4px 16px rgba(0,0,0,0.5);animation:popIn 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i*130}ms both;flex-shrink:0;`;
-          card.innerHTML=`<span style="font-family:'Pretendard',sans-serif;font-size:clamp(2.2rem,8vw,3.6rem);font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.8);line-height:1">${n}</span><span style="font-size:13px;color:rgba(255,255,255,0.85);margin-top:2px;font-weight:600">번</span>`;
+          card.style.cssText=`position:relative;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:clamp(110px,24vw,150px);height:clamp(110px,24vw,150px);border-radius:50%;background:${bg};border:3px solid #fff;box-shadow:0 0 0 2px ${ink}22,0 10px 24px rgba(133,115,245,0.18);animation:popIn 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i*130}ms both;flex-shrink:0;`;
+          card.innerHTML=`<span style="position:absolute;top:16%;left:20%;width:18%;height:18%;border-radius:50%;background:rgba(255,255,255,0.6)"></span><span style="font-family:'Pretendard',sans-serif;font-size:clamp(2.6rem,9vw,4rem);font-weight:800;color:${ink};line-height:1;letter-spacing:-1px">${n}</span><span style="font-size:14px;color:${ink};opacity:0.75;margin-top:2px;font-weight:600">번</span>`;
           chips.appendChild(card);
         });
         document.getElementById('numberResult').classList.add('show');
