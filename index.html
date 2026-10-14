@@ -930,8 +930,7 @@ function renderRandomGame(){
   renderNameGrid('randNameGrid','randAvailBadge',()=>{
     const n=activeStudents().length;
     randCount=Math.min(randCount,n||1);
-    document.getElementById('randCount').textContent=randCount;
-    document.getElementById('randAvail').textContent=`참여 ${n}명`;
+    renderRandomGame();
   });
   const n=activeStudents().length;
   document.getElementById('randAvail').textContent=`참여 ${n}명`;
@@ -987,9 +986,7 @@ function randomFingerTarget(){
 }
 
 function renderFingerGame(){
-  renderNameGrid('fingerNameGrid','fingerAvailBadge',()=>{
-    document.getElementById('fingerAvail').textContent = `참여 ${activeStudents().length}명`;
-  });
+  renderNameGrid('fingerNameGrid','fingerAvailBadge',()=>renderFingerGame());
   document.getElementById('fingerAvail').textContent = `참여 ${activeStudents().length}명`;
   renderFingerBtns();
 }
